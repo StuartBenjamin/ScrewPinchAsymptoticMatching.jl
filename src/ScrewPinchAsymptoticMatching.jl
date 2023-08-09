@@ -28,7 +28,6 @@ using Optim
 const mu0 = 4*pi*1e-7
 const H2_mass = 2*1.6605e-27
 
-
 include("InnerAsymptotics.jl")
 export findXmax, checkXmax, generate_Umatrix
 
@@ -43,7 +42,7 @@ include("ChandraScrewPinchEquilibrium.jl")
 export Furth_Equil, Chandra_Equil, Scaffidi_Equil, print_equil_data
 
 include("OuterIntegrator.jl")
-export raw_delta_prime, Psi_w_scales, plot_full_Psis
+export raw_delta_prime, Psi_w_scales, plot_full_Psis, k_, g_, find_rs
 
 include("OuterAsymptotics.jl")
 export plot_full_Psis_w_frobenius, Δl_Δr_calculator, Δl_Δr_calculator_zeroPressure, Δl_Δr_xmin, Δl_Δr_xmin_visualiser
