@@ -134,7 +134,7 @@ function ψ_plus_minus_zeroPressure(Bp, Bt, dpdr, k, m, rs; test_κ=false)
     return ψ_s, ψ_b, ψ_s_prime, ψ_b_prime
 end
 
-function zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp; del2 = 0.0, use_ψ=false)
+function zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp, rs; del2 = 0.0, use_ψ=false)
     if del2 == 0.0 || (del2 != 0.0 && del2 < del)
         del2 = del
         outScale2 = outScale
@@ -186,7 +186,7 @@ function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; inte
     ξ_plus_prime(r) = ForwardDiff.derivative(ξ_plus,r)
     ξ_minus_prime(r) = ForwardDiff.derivative(ξ_minus,r)
 
-    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp; del2 = del2)
+    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp, rs; del2 = del2)
 
     Δl = (zl*ξ_minus_prime(rs-del2)-ξ_minus(rs-del2))/(ξ_plus(rs-del2)-zl*ξ_plus_prime(rs-del2))
     Δr = (zr*ξ_minus_prime(rs+del2)-ξ_minus(rs+del2))/(ξ_plus(rs+del2)-zr*ξ_plus_prime(rs+del2))
@@ -227,7 +227,7 @@ function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, rs, ξ_plus, ξ_minus, solin, so
     ξ_plus_prime(r) = ForwardDiff.derivative(ξ_plus,r)
     ξ_minus_prime(r) = ForwardDiff.derivative(ξ_minus,r)
 
-    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp; del2 = del2)
+    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp, rs; del2 = del2)
 
     Δl = (zl*ξ_minus_prime(rs-del2)-ξ_minus(rs-del2))/(ξ_plus(rs-del2)-zl*ξ_plus_prime(rs-del2))
     Δr = (zr*ξ_minus_prime(rs+del2)-ξ_minus(rs+del2))/(ξ_plus(rs+del2)-zr*ξ_plus_prime(rs+del2))
@@ -256,7 +256,7 @@ function Δl_Δr_calculator_zeroPressure(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, de
     ψ_plus, ψ_minus, ψ_plus_prime, ψ_minus_prime = ψ_plus_minus_zeroPressure(Bp, Bt, dpdr, k, m, rs; test_κ=test_κ)
     solin, solout, inScale, outScale, del = Psi_w_scales(Bp, Bt, dpdr, k, m, r0, rs, rb, del; g=gzero, integrator_reltol=integrator_reltol, plot_solution=plot_solution)
 
-    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp; del2 = del2, use_ψ=true)
+    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp, rs; del2 = del2, use_ψ=true)
 
     Δl = (zl*ψ_minus_prime(rs-del2)-ψ_minus(rs-del2))/(ψ_plus(rs-del2)-zl*ψ_plus_prime(rs-del2))
     Δr = (zr*ψ_minus_prime(rs+del2)-ψ_minus(rs+del2))/(ψ_plus(rs+del2)-zr*ψ_plus_prime(rs+del2))
@@ -288,7 +288,7 @@ function Δl_Δr_calculator_zeroPressure(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, de
 end
 
 function Δl_Δr_calculator_zeroPressure(rs, ψ_plus, ψ_minus, ψ_plus_prime, ψ_minus_prime, solin, solout, inScale, outScale, del, del2; test_κ=false, plot_solution=true, plotwidth=10, plot_soln = true, plot_soln_1=false, kwargs...)
-    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, 0.0, 0.0, x->nothing, x->nothing; del2 = del2, use_ψ=true)
+    zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, 0.0, 0.0, x->nothing, x->nothing, rs; del2 = del2, use_ψ=true)
 
     Δl = (zl*ψ_minus_prime(rs-del2)-ψ_minus(rs-del2))/(ψ_plus(rs-del2)-zl*ψ_plus_prime(rs-del2))
     Δr = (zr*ψ_minus_prime(rs+del2)-ψ_minus(rs+del2))/(ψ_plus(rs+del2)-zr*ψ_plus_prime(rs+del2))
@@ -471,7 +471,7 @@ if false  #THIS IS WORKING
         ξ_plus_prime(r) = ForwardDiff.derivative(ξ_plus,r)
         ξ_minus_prime(r) = ForwardDiff.derivative(ξ_minus,r)
 
-        zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp; del2 = del2)
+        zl, zr, del2, outScale2 = zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp, rs; del2 = del2)
 
         Δl = (zl*ξ_minus_prime(rs-del2)-ξ_minus(rs-del2))/(ξ_plus(rs-del2)-zl*ξ_plus_prime(rs-del2))
         Δr = (zr*ξ_minus_prime(rs+del2)-ξ_minus(rs+del2))/(ξ_plus(rs+del2)-zr*ξ_plus_prime(rs+del2))
