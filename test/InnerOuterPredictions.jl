@@ -25,6 +25,8 @@ using DataFrames
 
 #include("GeneratingInnerTerms.jl")
 
+using Pkg
+Pkg.add(PackageSpec(url="https://github.com/StuartBenjamin/ScrewPinchAsymptoticMatching.jl"))
 using ScrewPinchAsymptoticMatching
 
 ############################################################################################################################################################
@@ -44,6 +46,9 @@ using ScrewPinchAsymptoticMatching
 
 ##########################################################################################################################################################
 ##########################################################################################################################################################
+
+mu0 = ScrewPinchAsymptoticMatching.mu0
+
 CesarPlots = true
 Furth73_Equil = false 
 
@@ -58,7 +63,7 @@ if Furth73_Equil
 
     m = 2;
     n = 1;
-    k = k_(n,R0)
+    k = ScrewPinchAsymptoticMatching.k_(n,R0)
     c0 = 1;
     r0 = 0.000001;
 else #This replicates Cesar's Modular Pinch Furth mathematica script
@@ -72,7 +77,7 @@ else #This replicates Cesar's Modular Pinch Furth mathematica script
 
     m = 2;
     n = 1;
-    k = k_(n,R0)
+    k = ScrewPinchAsymptoticMatching.k_(n,R0)
     c0 = 1;
     r0 = 0.1;
 end
@@ -121,9 +126,9 @@ delvec = 10 .^ range(-7,-0.5,length=dellength)
 Δ_raw_matrix_Chand = Matrix{Float64}(undef,dellength,q0length)
 
 Bp,Bt,q,dpdr,p,Jt,Jp,rb,outerp6 = Furth_Equil_qvar(false)(0.4)
-rs, rs_plot = find_rs(q,m,n,rb,q0,ν,rs0)
+rs, rs_plot = ScrewPinchAsymptoticMatching.find_rs(q,m,n,rb,q0,ν,rs0)
 rs = rs[1]
-capE,capF,capH,capM,capK,capG,Lr,Qr,capE_plus_capF = generateInnerTerms_ScrewPinch_Scaffidi(Bp, q, p, dpdr, rs, k, η_diff; γ=5/3, ρ=ρ)
+capE,capF,capH,capM,capK,capG,Lr,Qr,capE_plus_capF = generateInnerTerms_ScrewPinch_Scaffidi(Bt, Bp, q, p, dpdr, rs, k, η_diff, n; γ=5/3, ρ=ρ)
 
 nmax = 0 #Deprecated
 xmax = 1e7
@@ -139,7 +144,7 @@ for i in 1:q0length
     push!(q0vec, q0)
 
     Bp,Bt,q,dpdr,p,Jt,Jp,rb,outerp6 = Furth_Equil_qvar(false)(q0)
-    rs, rs_plot = find_rs(q,m,n,rb,q0,ν,rs0)
+    rs, rs_plot = ScrewPinchAsymptoticMatching.find_rs(q,m,n,rb,q0,ν,rs0)
     rs = rs[1]
     push!(rsvec,rs)
 
@@ -151,7 +156,7 @@ for i in 1:q0length
 
         Δ_raw_matrix[:,i] =  raw_delta_prime_del_var.(delvec)
         
-        Δl_zero,Δr_zero,del2 = Δl_Δr_calculator_zeroPressure(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, 1e-5; g_int=g_, test_κ=false, integrator_reltol=10^(-20), plot_solution=false, del2 = 0.0, plotwidth=3, plot_soln = false, plot_soln_1=false)
+        Δl_zero,Δr_zero,del2 = Δl_Δr_calculator_zeroPressure(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, 1e-5; g_int=ScrewPinchAsymptoticMatching.g_, test_κ=false, integrator_reltol=10^(-20), plot_solution=false, del2 = 0.0, plotwidth=3, plot_soln = false, plot_soln_1=false)
 
         Δl_,Δr_,del2 = Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, 1e-5; integrator_reltol=10^(-20), plot_solution=true, del2 = 0.0, plotwidth=100, plot_soln = true, plot_soln_1=false)
 
@@ -167,7 +172,7 @@ for i in 1:q0length
 
         #Δl,Δr,del2 = Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=10^(-20), plot_solution=false, plotwidth=10, plot_soln = false)
         
-        """
+        
         del_min,Δl_Δr_xmin_output,abs_err = Δl_Δr_xmin(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, delvec; big_n=20, xmin_tol = 1e-5, integrator_reltol=10^(-20), plot_solution=false, plotwidth=10, plot_soln = false, verbose = false)
 
         Δl_Δr_xmin_visualiser(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, delvec; finite_pressure=false, plot_solution=false, plotwidth=10, plot_soln = false)
@@ -177,8 +182,8 @@ for i in 1:q0length
 
         #Δvec,Δl_Δr_xmin_output = Δl_Δr_xmin(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, delvec; big_n=20, xmin_tol = 1e-3, integrator_reltol=10^(-20), plot_solution=false, plotwidth=10, plot_soln = false, verbose = false)
 
-        capE,capF,capH,capM,capK,capG,Lr,Qr,capE_plus_capF = generateInnerTerms_ScrewPinch_Scaffidi(Bp, q, p, dpdr, rs, k, η_diff; γ=5/3, ρ=ρ)
-        push!(inner_terms, generateInnerTerms_ScrewPinch_Scaffidi(Bp, q, p, dpdr, rs, k, η_diff; γ=5/3, ρ=ρ))
+        capE,capF,capH,capM,capK,capG,Lr,Qr,capE_plus_capF = generateInnerTerms_ScrewPinch_Scaffidi(Bt, Bp, q, p, dpdr, rs, k, η_diff, n; γ=5/3, ρ=ρ)
+        push!(inner_terms, generateInnerTerms_ScrewPinch_Scaffidi(Bt, Bp, q, p, dpdr, rs, k, η_diff, n; γ=5/3, ρ=ρ))
 
         Dr = capE+capF+capH^2
         push!(Drvec,(Dr,(pi*Dr/4)^(2/3)))
@@ -193,7 +198,7 @@ for i in 1:q0length
 
         Qstart, Dr, scalediff, scen = cylinder_root_start_Glass75(Δr_,Δl_,Lr,capE,capF,capH,capG,capK; Vs=1, scalediff=0.1)
         push!(scen_start,[Qstart, Dr, scalediff, scen])
-        """
+        
     end
 end
 
@@ -268,9 +273,9 @@ end
 
 if false  #Δe Δo orig plot
     #Checking Xmax
-    qlength=1000
+    qlength=10
     QvecNew = range(-5,5,length=qlength)
-    xmax = 1e7
+    xmax = 1e5
     checkXmax_Q = Q -> checkXmax(Q,xmax,3,2,capE,capF,capH,capG,capK; convergence_tol = 10.0^(-7), truncate_terms=[2,1,1])
     checkXmax_Q_bool = Q -> checkXmax_Q(Q)[1]
     sum(checkXmax_Q_bool.(QvecNew))
@@ -471,7 +476,6 @@ if true
 
 end
 
-
 if false #Δe Δo multi-scan
     #Checking Xmax
     qlength=1000
@@ -617,31 +621,6 @@ if false #DEPRECATED/OLD?
     #plot(rsvec,delta_vec)
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ##########################################################################################################################################################
 #Chandra
     #Same as Furth except pressure profile is nearly* pre-set and Bt varies with r to exactly satisfy power balance (Bt on axis set).
@@ -657,5 +636,3 @@ Bp0 = 1.0
 q0 = 1.1
 
 Bp,Bt,q,dpdr,p,Jt,Jp,rb,outerp6 = Chandra_Equil(β,rs0,R0,ν,xb; Bp0=Bp0, q0=q0, plot_equil=true, print_mathematica_inputs=false, plotrvec = range(0.000001,xb*rs0,200))
-
-
