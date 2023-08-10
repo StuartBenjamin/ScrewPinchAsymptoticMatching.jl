@@ -83,7 +83,7 @@ include("OuterIntegrator.jl")
 #Scaffidi
 ############################################################################################################################################################
 #η_diff is a diffusion coefficient (Scaffidi pg18))
-    function generateInnerTerms_ScrewPinch_Scaffidi(Bt, Bp, q, p, dpdr, rs, k, η_diff; γ=5/3, ρ=1.0)
+    function generateInnerTerms_ScrewPinch_Scaffidi(Bt, Bp, q, p, dpdr, rs, k, η_diff, n; γ=5/3, ρ=1.0)
         qprime = ForwardDiff.derivative(q,rs)
         B = B_(Bt,Bp)(rs)
 
@@ -165,7 +165,7 @@ if false
     η = 1e-5
     ρ = 1.0 #10^20*2.5*1.66054e-27
 
-    generateInnerTerms_ScrewPinch_Scaffidi(Bt, Bp, q, p, dpdr, rs, k, η_diff; γ=5/3, ρ=1.0)
+    generateInnerTerms_ScrewPinch_Scaffidi(Bt, Bp, q, p, dpdr, rs, k, η_diff, n; γ=5/3, ρ=1.0)
     generateInnerTerms_ScrewPinch_Glass75(Bt, Bp, Jt, Jp, p, dpdr, R0, rs,  ρ, η; Vs=1.0, γ=5/3)
 
     #capE's different (why this and none of the others?)
