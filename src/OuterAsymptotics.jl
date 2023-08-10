@@ -159,7 +159,7 @@ function zl_zr_calculator(solin, solout, inScale, outScale, del, k, m, Bt, Bp, r
     return zl,zr,del2,outScale2
 end
 
-function plot_full_Psis_w_frobenius(solin, solout, inScale, outScale, ξl, ξr, del, nmax; plotwidth=10, plot_soln_1=false, res = 100)
+function plot_full_Psis_w_frobenius(solin, solout, inScale, outScale, ξl, ξr, del, nmax, rs; plotwidth=10, plot_soln_1=false, res = 100)
 
     closevec_in = range(rs-plotwidth*del,rs-del,length=res)
     closevec_out = range(rs+plotwidth*del,rs+del,length=res)
@@ -197,7 +197,7 @@ function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; inte
     #ξl(r) = cl*(ξ_minus(r)+Δl*ξ_plus(r))
     #ξr(r) = cr*(ξ_minus(r)+Δr*ξ_plus(r))
 
-    #plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, ξl, ξr, del2, nmax; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
+    #plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, ξl, ξr, del2, nmax, rs; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
     ############################################################################################################################################################
 
     ############################################################################################################################################################
@@ -213,7 +213,7 @@ function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; inte
     psi_l(r) = cl*psi_l_raw(r)
     psi_r(r) = cr*psi_r_raw(r)
 
-    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
+    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
     ############################################################################################################################################################
 
     return Δl,Δr,del2
@@ -245,7 +245,7 @@ function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, rs, ξ_plus, ξ_minus, solin, so
     psi_l(r) = cl*psi_l_raw(r)
     psi_r(r) = cr*psi_r_raw(r)
 
-    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
+    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
     ############################################################################################################################################################
 
     return Δl,Δr,del2
@@ -267,7 +267,7 @@ function Δl_Δr_calculator_zeroPressure(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, de
     #ξl(r) = cl*(ξ_minus(r)+Δl*ξ_plus(r))
     #ξr(r) = cr*(ξ_minus(r)+Δr*ξ_plus(r))
 
-    #plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, ξl, ξr, del2, nmax; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
+    #plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, ξl, ξr, del2, nmax, rs; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
     ############################################################################################################################################################
 
     ############################################################################################################################################################
@@ -281,7 +281,7 @@ function Δl_Δr_calculator_zeroPressure(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, de
     psi_r(r) = cr*psi_r_raw(r)
 
     nmax = 2
-    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
+    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
     ############################################################################################################################################################
 
     return Δl,Δr,del2
@@ -304,7 +304,7 @@ function Δl_Δr_calculator_zeroPressure(rs, ψ_plus, ψ_minus, ψ_plus_prime, �
     psi_r(r) = cr*psi_r_raw(r)
 
     nmax = 2
-    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
+    plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
     ############################################################################################################################################################
 
     return Δl,Δr,del2
@@ -504,9 +504,9 @@ if false  #THIS IS WORKING
             vline!([rb], label = "Edge of device")
             display(p1)
         end
-        #plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax; plotwidth=5)
-        #p0 = plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax; plotwidth=5)
-        #push!(plots,plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax; plotwidth=5))
+        #plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=5)
+        #p0 = plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=5)
+        #push!(plots,plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=5))
     end
 ############################################################################################################################################################
 #Checking del-dependence: THIS IS HOW TO CHECK YOU'RE IN XMIN
