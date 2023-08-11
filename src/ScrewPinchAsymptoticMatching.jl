@@ -50,4 +50,7 @@ export plot_full_Psis_w_frobenius, Δl_Δr_calculator, Δl_Δr_calculator_zeroPr
 include("GeneratingInnerTerms.jl")
 export generateInnerTerms_ScrewPinch_Scaffidi, generateInnerTerms_ScrewPinch_Glass75
 
+include("deltac_inerface.jl")
+export call_deltac
+
 end
