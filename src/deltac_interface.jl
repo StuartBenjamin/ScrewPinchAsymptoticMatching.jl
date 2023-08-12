@@ -8,7 +8,7 @@ deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false)
 
     deltac_run_julia_out = zeros(Float64, 3, 2, 2)
 
-    x = ccall((:__deltac_mod_MOD_deltac_run_julia, string(mod_path,"/src/deltac.so")),
+    x = ccall((:__deltac_mod_MOD_deltac_run_julia, string(mod_path,"deltac.so")),
                 Cvoid,
                 (Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},
                 Ref{Float64},Ref{Float64},Ref{Float64},
@@ -32,6 +32,6 @@ deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false)
     return Δe,Δo
 end
 
-#mod_path=chop(pathof(ScrewPinchAsymptoticMatching);tail=31)
+#ScrewPinchAsymptoticMatching.mod_path=chop(pathof(ScrewPinchAsymptoticMatching);tail=31)
 #call_deltac(0.1, 0., 0., 0., 0., 0., 1., 1., 1.,0.01,0.0)
 #call_deltac(0.1, 0.005, 40., 0.05, 500., 0., 1., 1., 1.,3.0,0.0)
