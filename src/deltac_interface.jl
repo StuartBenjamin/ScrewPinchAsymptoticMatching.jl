@@ -4,7 +4,7 @@ nx_in::Int=256, nq_in::Int=5, cutoff_in::Int=5, kmax_in::Int=8, interp_np_in::In
 hermite_in_res_cells::Bool=false,noexp_in::Bool=true,restore_uh_in::Bool=true,
 restore_us_in::Bool=true,restore_ul_in::Bool=true,diagnose_res_in::Bool=false,
 diagnose_params_in::Bool=false,grid_diagnose_in::Bool=false,
-deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false,mod_path=pathof(ScrewPinchAsymptoticMatching))
+deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false,mod_path="")
 
     deltac_run_julia_out = zeros(Float64, 3, 2, 2)
 
@@ -32,5 +32,6 @@ deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false,mod_path=pathof(Scre
     return Δe,Δo
 end
 
+#mod_path=pathof(ScrewPinchAsymptoticMatching)
 #call_deltac(0.1, 0., 0., 0., 0., 0., 1., 1., 1.,0.01,0.0)
 #call_deltac(0.1, 0.005, 40., 0.05, 500., 0., 1., 1., 1.,3.0,0.0)
