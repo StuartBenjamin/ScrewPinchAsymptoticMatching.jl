@@ -8,7 +8,7 @@ deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false)
 
     deltac_run_julia_out = zeros(Float64, 3, 2, 2)
 
-    x = ccall((:__deltac_mod_MOD_deltac_run_julia, string(pwd(),"/deltac.so")),
+    x = ccall((:__deltac_mod_MOD_deltac_run_julia, "deltac.so"),
                 Cvoid,
                 (Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},
                 Ref{Float64},Ref{Float64},Ref{Float64},
