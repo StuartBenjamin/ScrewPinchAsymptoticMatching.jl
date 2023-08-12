@@ -4,11 +4,11 @@ nx_in::Int=256, nq_in::Int=5, cutoff_in::Int=5, kmax_in::Int=8, interp_np_in::In
 hermite_in_res_cells::Bool=false,noexp_in::Bool=true,restore_uh_in::Bool=true,
 restore_us_in::Bool=true,restore_ul_in::Bool=true,diagnose_res_in::Bool=false,
 diagnose_params_in::Bool=false,grid_diagnose_in::Bool=false,
-deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false,mod_path="")
+deltac_bin_sol_in::Bool=false,deltac_out_sol_in::Bool=false)
 
     deltac_run_julia_out = zeros(Float64, 3, 2, 2)
 
-    x = ccall((:__deltac_mod_MOD_deltac_run_julia, string(mod_path,"/src/deltac.so")),
+    x = ccall((:__deltac_mod_MOD_deltac_run_julia, string(ScrewPinchAsymptoticMatching_path,"/src/deltac.so")),
                 Cvoid,
                 (Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},Ref{Float64},
                 Ref{Float64},Ref{Float64},Ref{Float64},
