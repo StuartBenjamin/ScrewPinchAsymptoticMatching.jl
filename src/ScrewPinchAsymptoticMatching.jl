@@ -27,7 +27,7 @@ using Optim
 
 const mu0 = 4*pi*1e-7
 const H2_mass = 2*1.6605e-27
-global ScrewPinchAsymptoticMatching_path = ""
+global mod_path = "" #once ScrewPinchAsymptoticMatching compiled run:# ScrewPinchAsymptoticMatching.mod_path=chop(pathof(ScrewPinchAsymptoticMatching);tail=31)
 
 include("InnerAsymptotics.jl")
 export findXmax, checkXmax, generate_Umatrix
