@@ -484,7 +484,7 @@ function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R
         outerp6=nothing
     end
 
-    return Bp,Bt,q,dpdr,p,Jt,Jp,Jt.xs[end],outerp6,Jp2
+    return Bp,Bt,q,dpdr,r -> ForwardDiff.derivative(p,r),Jt,Jp,Jt.xs[end],outerp6,Jp2
 end
 
 diff_spln(spln) = r -> CubicSplines.gradient(spln,r)
