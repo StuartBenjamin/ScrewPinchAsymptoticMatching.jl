@@ -460,7 +460,6 @@ function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R
         function Jp2(r)
             return (-(1/(mu0))*(1/2)*(1/Bt(r))*(- 2*mu0*(gradient(p,r) - 2*mu0*(Bp(r)*Jt(r)))))
         end
-        local_beta_knots = local_beta(r)
     else
         Jp2 = nothing
     end
