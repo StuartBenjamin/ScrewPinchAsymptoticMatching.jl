@@ -368,7 +368,7 @@ the given number.
 If the returned index is 0, the number is located in the interval (-Inf, array[1])
 If the returned index is length(array), the number is located in the interval [array[end], Inf)
 """
-@inline function _binary_search_interval(array::Vector{T}, number::Real) where T <: Real
+@inline function _binary_search_interval(array::Vector{T}, number::Number) where T <: Real
 
     left = 1
     right = length(array)
