@@ -15,6 +15,7 @@ using SpecialFunctions
 using JLD2
 using CSV
 using DataFrames
+using CubicSplines
 
 using QuadGK
 using DelimitedFiles
@@ -41,6 +42,9 @@ export countour_Q, GRPF_Q, D_Q_Xvarying, countour_Q_Xvarying, cylinder_root_star
 
 include("ChandraScrewPinchEquilibrium.jl")
 export Furth_Equil, Chandra_Equil, Scaffidi_Equil, print_equil_data
+
+include("ModularCurrentProfile.jl")
+export integral, rJt_integral, initialise_internalInt_Spline, Bp_Spline, internalInt_Spline, Bt_Spline, Spline_Equil, diff_spln, forwarddiff_spln
 
 include("OuterIntegrator.jl")
 export raw_delta_prime, Psi_w_scales, plot_full_Psis, k_, g_, find_rs
