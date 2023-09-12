@@ -81,7 +81,7 @@ Jp_(Bt) = r -> -(1/(mu0))*ForwardDiff.derivative(Bt,r)
 ##########################################################################################################################################################
 function print_equil_data(Jt,Bt,p; rvec=nothing, filename_prefactor="", destination="")
     if rvec isa Nothing
-        @throw("Define vector of r-values 'rvec' to print equilibrium data on.")
+        throw("Define vector of r-values 'rvec' to print equilibrium data on.")
     end
 
     Jtvec = Jt.(rvec)
