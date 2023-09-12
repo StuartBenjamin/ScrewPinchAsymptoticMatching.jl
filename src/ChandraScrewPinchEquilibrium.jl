@@ -37,18 +37,18 @@ P0(β,rs0,R0,ν;Bp0=0.0,q0=1.0) = β*BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(0.0)^2/(2*m
 p_Chand(β,rs0,R0,ν,xb;Bp0=0.0,q0=1.0) = r -> P0(β,rs0,R0,ν;Bp0=Bp0,q0=q0)*(1 - ((r/rs0)/xb)^2)
 dpdr_Chand(β,rs0,R0,ν,xb;Bp0=0.0,q0=1.0) = r -> -2*mu0*P0(β,rs0,R0,ν;Bp0=Bp0,q0=q0)*r/(rs0^2*xb^2)
 
-internalInt(rs0,R0,ν;Bp0=0.0) = r -> (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*r^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(r/rs0)^(2*ν)))/rs0^2 - (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*0.0^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(0.0/rs0)^(2*ν)))/rs0^2
-internalInt_rb(rs0,R0,rb,ν;Bp0=0.0) = r -> (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*r^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(r/rs0)^(2*ν)))/rs0^2 - (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*rb^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(rb/rs0)^(2*ν)))/rs0^2
+internalInt_Chand(rs0,R0,ν;Bp0=0.0) = r -> (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*r^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(r/rs0)^(2*ν)))/rs0^2 - (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*0.0^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(0.0/rs0)^(2*ν)))/rs0^2
+internalInt_rb_Chand(rs0,R0,rb,ν;Bp0=0.0) = r -> (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*r^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(r/rs0)^(2*ν)))/rs0^2 - (Bp0_(rs0,R0,ν;Bp0=Bp0)^2*rb^2*_₂F₁(1/ν, (2 + ν)/ν, 1 + 1/ν, -(rb/rs0)^(2*ν)))/rs0^2
 
-Bt_Chand(β,rs0,R0,ν,xb;Bp0=0.0,q0=1.0) = r -> sqrt(BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(0.0)^2 - 2*mu0*(p_Chand(β,rs0,R0,ν,xb;Bp0=Bp0,q0=q0)(r) - p_Chand(β,rs0,R0,ν,xb;Bp0=Bp0,q0=q0)(0.0)) - 2*internalInt(rs0,R0,ν;Bp0=Bp0)(r))
-Bt_Scaffidi(β,rs0,R0,ν,xb;Bp0=0.0,q0=1.0) = r -> sqrt(BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(xb*rs0)^2 - 2*mu0*p_Chand(β,rs0,R0,ν,xb;Bp0=Bp0,q0=q0)(r) - 2*(internalInt(rs0,R0,ν;Bp0=Bp0)(r)-internalInt(rs0,R0,ν;Bp0=Bp0)(xb*rs0)))
+Bt_Chand(β,rs0,R0,ν,xb;Bp0=0.0,q0=1.0) = r -> sqrt(BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(0.0)^2 - 2*mu0*(p_Chand(β,rs0,R0,ν,xb;Bp0=Bp0,q0=q0)(r) - p_Chand(β,rs0,R0,ν,xb;Bp0=Bp0,q0=q0)(0.0)) - 2*internalInt_Chand(rs0,R0,ν;Bp0=Bp0)(r))
+Bt_Scaffidi(β,rs0,R0,ν,xb;Bp0=0.0,q0=1.0) = r -> sqrt(BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(xb*rs0)^2 - 2*mu0*p_Chand(β,rs0,R0,ν,xb;Bp0=Bp0,q0=q0)(r) - 2*(internalInt_Chand(rs0,R0,ν;Bp0=Bp0)(r)-internalInt_Chand(rs0,R0,ν;Bp0=Bp0)(xb*rs0)))
 
 Bt_Chand_NoPressure(β,rs0,R0,ν,xb;Bp0=0.0,q0=1.0) = r -> R0*BpDivr(rs0,R0,ν;Bp0=Bp0)(r)*q_Furth(q0,ν,rs0)
 Bt_Furth(q0,rs0,R0,ν,xb;Bp0=0.0) = r -> R0*BpDivr(rs0,R0,ν;Bp0=Bp0)(r)*q_Furth(q0,ν,rs0)(r) #Furth equilibrium instead
 
 dpdr_Furth(q0,rs0,R0,ν,xb;Bp0=0.0) = r -> -mu0*(Bp_Chand(rs0,R0,ν;Bp0=Bp0)(r)/(mu0*r))*(Bp_Chand(rs0,R0,ν;Bp0=Bp0)(r)+r*-1*((Bp0_(rs0,R0,ν;Bp0=Bp0)*(-1 + (r/rs0)^(2*ν))*(1 + (r/rs0)^(2*ν))^(-((1 + ν)/ν)))/rs0))
 dpdr_Furth2(q0,rs0,R0,ν,xb;Bp0=0.0) = r -> -mu0*(-Bt_Furth(q0,rs0,R0,ν,xb;Bp0=Bp0)(r)*ForwardDiff.derivative(Bt_Furth(q0,rs0,R0,ν,xb;Bp0=Bp0),r)/(mu0) - (Bp_Chand(rs0,R0,ν;Bp0=Bp0)(r)/(mu0*r))*ForwardDiff.derivative(x->x*Bp_Chand(rs0,R0,ν;Bp0=Bp0)(x),r))
-p_Furth(rs0,R0,rb,ν;Bp0=0.0) = r -> -internalInt_rb(rs0,R0,rb,ν;Bp0=Bp0)(r)/mu0 #All pressure supplied by poloidal field
+p_Furth(rs0,R0,rb,ν;Bp0=0.0) = r -> -internalInt_rb_Chand(rs0,R0,rb,ν;Bp0=Bp0)(r)/mu0 #All pressure supplied by poloidal field
 
 #Deprecated solution for toroidal field using numerical integration (Corrent to 6 sig fig relative to Mathematica)
 ##########################################################################################################################################################
@@ -79,7 +79,11 @@ Jp_(Bt) = r -> -(1/(mu0))*ForwardDiff.derivative(Bt,r)
 
 #Printing data to go: 
 ##########################################################################################################################################################
-function print_equil_data(Jt,Bt,p; rvec=range(0.02,xb*rs0,step=0.02), filename_prefactor="", destination="")
+function print_equil_data(Jt,Bt,p; rvec=nothing, filename_prefactor="", destination="")
+    if rvec isa Nothing
+        @throw("Define vector of r-values 'rvec' to print equilibrium data on.")
+    end
+
     Jtvec = Jt.(rvec)
     Btvec = Bt.(rvec)
     pvec = p.(rvec)
@@ -99,7 +103,7 @@ end
 
 #Pre-packaged equilibria!!! 
 ##########################################################################################################################################################
-function Furth_Equil(q0,rs0,R0,ν,xb; Bp0=1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), kwargs...)
+function Furth_Equil(q0,rs0,R0,ν,xb; Bp0=1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), rvec=range(0.02,xb*rs0,step=0.02), kwargs...)
     rb = xb*rs0
 
     Bp = Bp_Chand(rs0,R0,ν;Bp0=Bp0)
@@ -113,7 +117,7 @@ function Furth_Equil(q0,rs0,R0,ν,xb; Bp0=1.0, plot_equil=true, print_mathematic
     Jp = Jp_(Bt)
 
     if print_mathematica_inputs
-        print_equil_data(Jt,Bt,p; kwargs...)
+        print_equil_data(Jt,Bt,p; rvec=rvec, kwargs...)
     end
     if plot_equil
         p1=plot(plotrvec,Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
@@ -136,7 +140,7 @@ Furth_Peaked(q0,rs0,R0,xb; Bp0=1.0, plot_equil=true, print_mathematica_inputs=tr
 Furth_Rounded(q0,rs0,R0,xb; Bp0=1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), kwargs...) = Furth_Equil(q0,rs0,R0,2,xb; Bp0=Bp0, plot_equil=plot_equil, print_mathematica_inputs=print_mathematica_inputs, plotrvec = plotrvec, kwargs...)
 Furth_Flattened(q0,rs0,R0,xb; Bp0=1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), kwargs...) = Furth_Equil(q0,rs0,R0,4,xb; Bp0=Bp0, plot_equil=plot_equil, print_mathematica_inputs=print_mathematica_inputs, plotrvec = plotrvec, kwargs...)
 
-function Chandra_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0 = 1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), kwargs...)
+function Chandra_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0 = 1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), rvec=range(0.02,xb*rs0,step=0.02), kwargs...)
     rb = xb*rs0
 
     Bp = Bp_Chand(rs0,R0,ν;Bp0=Bp0)
@@ -150,7 +154,7 @@ function Chandra_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0 = 1.0, plot_equil=true, prin
     Jp = Jp_(Bt)
 
     if print_mathematica_inputs
-        print_equil_data(Jt,Bt,p; kwargs...)
+        print_equil_data(Jt,Bt,p; rvec=rvec, kwargs...)
     end
     if plot_equil
         p1=plot(plotrvec,Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
@@ -169,7 +173,7 @@ function Chandra_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0 = 1.0, plot_equil=true, prin
     return Bp,Bt,q,dpdr,p,Jt,Jp,rb,outerp6
 end
 
-function Scaffidi_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0=1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), kwargs...)
+function Scaffidi_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0=1.0, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,xb*rs0,200), rvec=range(0.02,xb*rs0,step=0.02), kwargs...)
     rb = xb*rs0
 
     Bp = Bp_Chand(rs0,R0,ν;Bp0=Bp0)
@@ -183,7 +187,7 @@ function Scaffidi_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0=1.0, plot_equil=true, print
     Jp = Jp_(Bt)
 
     if print_mathematica_inputs
-        print_equil_data(Jt,Bt,p; kwargs...)
+        print_equil_data(Jt,Bt,p; rvec=rvec, kwargs...)
     end
     if plot_equil
         p1=plot(plotrvec,Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
