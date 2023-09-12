@@ -1,7 +1,7 @@
 """
 Integration of spline from point x1 to point x2. Assume both x1 and x2 are in the range of interpolated data.
 """
-function integral(spline::CubicSpline, x1::Real, x2::Real)
+function integral(spline::CubicSpline, x1::Real, x2::Number)
     idx1,idx2 = _checkbounds(spline, x1, x2)
 
     # Both points in same interval
@@ -85,7 +85,7 @@ end
 Checks the integral bounds x1 and x2 lie within spline interpolation range. No integration into extrapolated region at this point.
 Also returns x1 and x2's corresponding spline intervals.
 """
-function _checkbounds(spline::CubicSpline, x1::Real, x2::Real)
+function _checkbounds(spline::CubicSpline, x1::Real, x2::Number)
     @assert x1 != x2
 
     # Checking intervals of both points
@@ -385,7 +385,7 @@ end
 """
 Calculates the integral of Bp*Jt from r = 0.0 to r = x2. 
 """     
-function internalInt_Spline(spline::CubicSpline, internalInt_components::AbstractArray{<:Real,1}, rJt_components::AbstractArray{<:Real,1}, x2::Real; x1::Real=0.0) 
+function internalInt_Spline(spline::CubicSpline, internalInt_components::AbstractArray{<:Real,1}, rJt_components::AbstractArray{<:Real,1}, x2::Number; x1::Real=0.0) 
     @assert x1 == 0.0
 
     if x1==x2   
