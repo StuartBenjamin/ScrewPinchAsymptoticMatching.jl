@@ -458,7 +458,7 @@ function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R
     Jp = r -> -(1/(mu0))*ForwardDiff.derivative(Bt,r)
     if p isa CubicSpline
         function Jp2(r)
-            return (-(1/(mu0))*(1/2)*(1/Bt(r))*(- 2*mu0*(CubicSplines.gradient(p,r) - 2*mu0*(Bp(r)*Jt(r)))))
+            return (-(1/(mu0))*(1/2)*(1/Bt(r))*(- 2*mu0*CubicSplines.gradient(p,r) - 2*mu0*(Bp(r)*Jt(r))))
         end
     else
         Jp2 = nothing
