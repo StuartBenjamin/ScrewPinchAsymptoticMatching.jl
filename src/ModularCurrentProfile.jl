@@ -446,8 +446,11 @@ function Bt_Spline(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real)
     return Bt
 end
 
-#Pre-packaged equilibria!!! 
-function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R0::Real; plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,Jt.xs[end],200), rvec=range(0.02,Jt.xs[end],step=0.02), kwargs...)
+"""
+Calculates all equilibrium functions from an input Jt spline and input pressure function/spline. 
+If an analytic pressure is used, input the analytical derivative (scaled by mu0) in the variable dpdr.
+"""
+function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R0::Real; dpdr = nothing, plot_equil=true, print_mathematica_inputs=true, plotrvec = range(0.000001,Jt.xs[end],200), rvec=range(0.02,Jt.xs[end],step=0.02), kwargs...)
     Bp = Bp_Spline(Jt)
     Bt = Bt_Spline(Jt,p,Bt0)
 
@@ -484,7 +487,14 @@ function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R
         outerp6=nothing
     end
 
-    return Bp,Bt,q,r -> mu0*ForwardDiff.derivative(x->p(x),r),p,Jt,Jp,Jt.xs[end],outerp6,Jp2
+    if p isa CubicSpline
+        dpdr = r -> mu0*gradient(p,r)
+    elseif dpdr isa Nothing
+        throw("Need to manually define dpdr")
+    end
+    
+
+    return Bp,Bt,q,dpdr,p,Jt,Jp,Jt.xs[end],outerp6,Jp2
 end
 
 diff_spln(spln) = r -> gradient(spln,r)
