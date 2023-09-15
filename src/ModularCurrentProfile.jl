@@ -278,7 +278,7 @@ end
 """
 Integration of rJt from point x1 to point x2. Assume both x1 and x2 are in the range of interpolated data.
 """
-function rJt_integral(Jt::CubicSpline, x2::Real, x1::Real)
+function rJt_integral(Jt::CubicSpline, x2::Number, x1::Real)
     idx1,idx2 = _checkbounds(Jt, x1, x2)
 
     # Both points in same interval
