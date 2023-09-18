@@ -511,6 +511,40 @@ function forwarddiff_spln(spln::Function,n)
     return spln
 end
 
+function find_rs(q,m,n,rb;verbose=true)
+    qtest = m/n
+    f1 = x -> abs(q(first(x))-qtest)
+
+    res1 = optimize(f1, 0.0, rb,  [rb/10])
+    res2 = optimize(f1, 0.0, rb,  [rb/2])
+    res3 = optimize(f1, 0.0, rb,  [9*rb/10])
+    #optimize(f1,[q_Furth_find_rs(q0,ν,rs0)(qtest)],LBFGS())
+    #res = optimize(ftest,xb/2,rb)
+
+    if (abs(res1.minimizer[1]-res2.minimizer[1]) > 1e-10*rb) || (abs(res3.minimizer[1]-res2.minimizer[1]) > 1e-5*rb)
+        print("Multiple rs values detected: \n") 
+        print("rs = {$(res1.minimizer[1]), $(res2.minimizer[1]), $(res3.minimizer[1])}")
+    end
+
+    res = res2
+
+    if Optim.converged(res) #&& !(abs(res.minimizer-a)<0.1*a || abs(res.minimizer)<0.1)
+        rs = res.minimizer
+        p1 = plot(0:(rb/300):rb,[q(i) for i in 0:(rb/300):rb],title="q profile",label=false)
+        p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="q = $(m)/$(n)",line=:dash, xlabel="r (m)")
+        p1 = vline!([res.minimizer],label="resonant surface location",line=:dash)
+    else    
+        @warn "Your chosen rbtional surface lies outside your minor rbdius!"
+        p1 = plot(0:(rb/300):rb,[q(i) for i in 0:(rb/300):rb],title="q profile",label=false)
+        p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="proposed rational q-value",line=:dash, xlabel="r (m)")
+        p1 = vline!([res.minimizer],label="proposed resonant surface location",line=:dash)
+    end
+
+    verbose && display(p1)
+
+    return res.minimizer, p1
+end
+
 #Plotting & Testing
 ############################################################################################################################################################
 ############################################################################################################################################################
