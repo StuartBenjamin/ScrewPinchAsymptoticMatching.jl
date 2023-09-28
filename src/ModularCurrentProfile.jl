@@ -476,8 +476,8 @@ function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R
         p3=plot(plotrvec,q.(plotrvec),title = "q",label=false,xlabel="r (m)")
         p4=plot(plotrvec,local_beta.(plotrvec),title = "Local Plasma β",xlabel="r (m)",label=false)
         p isa CubicSpline && (p4=scatter!(p.xs,local_beta.(p.xs),title = "Local Plasma β",xlabel="r (m)",label=false))
-        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
-        p5=scatter!(Jt.xs,Jt.(Jt.xs),title = "Toroidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
+        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false)
+        p5=scatter!(Jt.xs,Jt.(Jt.xs),title = "Toroidal current",xlabel="r (m)",ylabel="Amps/m^2",label=false)
         p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
         p6=plot!(plotrvec,Jp2.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
 
@@ -511,7 +511,7 @@ function forwarddiff_spln(spln::Function,n)
     return spln
 end
 
-function find_rs(q,m,n,rb;verbose=true)
+function find_rs_Optim(q,m,n,rb;verbose=true)
     qtest = m/n
     f1 = x -> abs(q(first(x))-qtest)
 
@@ -543,6 +543,38 @@ function find_rs(q,m,n,rb;verbose=true)
     verbose && display(p1)
 
     return res.minimizer, p1
+end
+
+function find_rs(q,m,n,rb;verbose=true, useOptim=false)
+    useOptim && (return find_rs_Optim(q,m,n,rb;verbose=verbose))
+    
+    qtest = m/n
+    f1 = x -> abs(q(first(x))-qtest)
+
+    zeros = find_zeros(f1,0.0,rb)
+
+    if length(zeros)>1
+        print("Multiple rs values detected: \n") 
+        print("rs = {$(zeros[1])")
+        for i in 2:length(zeros)
+            print(",$(zeros[i])")
+        end
+        print("}\n")
+    elseif length(zeros)==0
+        print("No zeros detected.\n")
+        @warn "Your chosen rational surface lies outside your minor radius!"
+        return find_rs_Optim(q,m,n,rb;verbose=verbose)
+    end
+
+    rs = zeros[1]
+
+    p1 = plot(0:(rb/300):rb,[q(i) for i in 0:(rb/300):rb],title="q profile",label=false)
+    p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="q = $(m)/$(n)",line=:dash, xlabel="r (m)")
+    p1 = vline!([rs],label="resonant surface location",line=:dash)
+
+    verbose && display(p1)
+
+    return rs, p1
 end
 
 #Plotting & Testing
