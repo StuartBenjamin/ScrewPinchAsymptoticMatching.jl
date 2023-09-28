@@ -24,7 +24,7 @@ function contour_inner(Qmin,Qmax;args=[pi/2,-pi/2],in_res=100,out_res=100,rad_re
 end
 
 #TESTED
-function generate_inner_ratios(xmax::Float64,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1]) 
+function generate_inner_ratios(xmax::Real,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1]) 
     umatrix_(Q) = X -> generate_Umatrix(X,Q,k1,k2,capE,capF,capH,capG,capK;truncate_terms=truncate_terms)[1];
 
     EN_minus_One_odd = Q -> compute_EN_minus_One(1,N,xmax,Q,capE,capF,capH,capG,capK);
@@ -55,14 +55,14 @@ function generate_inner_ratios_Xvar(capE,capF,capH,capG,capK; k1=3,k2=2, search_
 end
 
 #TESTED
-function generate_D_Q(xmax::Float64,Δr,Δl,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1]) 
+function generate_D_Q(xmax::Real,Δr,Δl,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1]) 
     Δo,Δe = generate_inner_ratios(xmax,capE,capF,capH,capG,capK; k1=k1,k2=k2, N=N, truncate_terms=truncate_terms) 
     D_Q_indiv(Q) = det([(Δr-Δe(Q))  (Δr-Δo(Q));(Δl-Δe(Q))   -(Δl-Δo(Q))])
 
     return D_Q_indiv
 end
 
-function countour_Q(xmax::Float64,Δr,Δl,ctour,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1]) 
+function countour_Q(xmax::Real,Δr,Δl,ctour,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1]) 
     D_Q_indiv = generate_D_Q(xmax,Δr,Δl,capE,capF,capH,capG,capK; k1=k1,k2=k2, N=N, truncate_terms=truncate_terms) 
     M_contour = D_Q_indiv.(ctour)
 
@@ -70,7 +70,7 @@ function countour_Q(xmax::Float64,Δr,Δl,ctour,capE,capF,capH,capG,capK; k1=3,k
 end
 
 #TOO SLOW...
-function GRPF_Q(domain_coords,xmax::Float64,Δr,Δl,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1], plotdata=false, multithreading=false, tolerance=10^-9, maxiterations=100, maxnodes=500, tess_sizehint=5000) 
+function GRPF_Q(domain_coords,xmax::Real,Δr,Δl,capE,capF,capH,capG,capK; k1=3,k2=2, N=2000, truncate_terms=[2;1;1], plotdata=false, multithreading=false, tolerance=10^-9, maxiterations=100, maxnodes=500, tess_sizehint=5000) 
     D_Q_indiv = generate_D_Q(xmax,Δr,Δl,capE,capF,capH,capG,capK; k1=k1,k2=k2, N=N, truncate_terms=truncate_terms) 
     
     if plotdata
