@@ -9,6 +9,11 @@ Modified by Stefan Mathis to allow for customized extrapolation and to use a
 binary search for interval identification.
 =#
 
+#=
+Generalised certain inputs to type Number to allow compatibility with TaylorSeries 
+package - S. Benjamin.
+=#
+
 #module CubicSplines
 
 #export CubicSpline, gradient
