@@ -36,7 +36,7 @@ d2F(k, m, Bt, Bp) = r -> ForwardDiff.derivative(dF(k, m, Bt, Bp), r)
 
 ##########################################################################################################################################################
 #Solving for rs
-function find_rs(q,m,n,rb,q0,ν,rs0;verbose=true)
+function find_rs_Optim(q,m,n,rb,q0,ν,rs0;verbose=true)
     f1= x -> abs(q(first(x))-m/n)
     qtest = m/n
     res = optimize(f1,[q_Furth_find_rs(q0,ν,rs0)(qtest)],LBFGS())
@@ -58,6 +58,38 @@ function find_rs(q,m,n,rb,q0,ν,rs0;verbose=true)
     verbose && display(p1)
 
     return res.minimizer, p1
+end
+
+function find_rs(q,m,n,rb,q0,ν,rs0; verbose=true, useOptim=false)
+    useOptim && (return find_rs_Optim(q,m,n,rb,q0,ν,rs0;verbose=verbose))
+
+    qtest = m/n
+    f1 = x -> abs(q(first(x))-qtest)
+
+    zeros = find_zeros(f1,0.0,rb)
+
+    if length(zeros)>1
+        print("Multiple rs values detected: \n") 
+        print("rs = {$(zeros[1])")
+        for i in 2:length(zeros)
+            print(",$(zeros[i])")
+        end
+        print("}\n")
+    elseif length(zeros)==0
+        print("No zeros detected.\n")
+        @warn "Your chosen rational surface lies outside your minor radius!"
+        return find_rs_Optim(q,m,n,rb,q0,ν,rs0;verbose=verbose)
+    end
+
+    rs = zeros[1]
+
+    p1 = plot(0:(rb/300):rb,[q(i) for i in 0:(rb/300):rb],title="q profile",label=false)
+    p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="q = $(m)/$(n)",line=:dash, xlabel="r (m)")
+    p1 = vline!([rs],label="resonant surface location",line=:dash)
+
+    verbose && display(p1)
+
+    return rs, p1
 end
 
 ##########################################################################################################################################################
