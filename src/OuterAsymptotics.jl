@@ -69,8 +69,8 @@ end
 
 ξ(ξs,σ,rs,rs0) = r -> ξ_full(ξs,σ,rs,r,rs0) 
 
-function ξ_plus_minus(f::Function, g::Function, rs, rs0, nmax; kwargs...)
-    ξs_plus, ξs_minus, σ_plus, σ_minus, f2, g0 = ξseries_plus_minus(f, g, rs, nmax; kwargs...)
+function ξ_plus_minus(f__::Function, g__::Function, rs, rs0, nmax; kwargs...)
+    ξs_plus, ξs_minus, σ_plus, σ_minus, f2, g0 = ξseries_plus_minus(f__, g__, rs, nmax; kwargs...)
 
     ξ_plus = ξ(ξs_plus,σ_plus,rs,rs0)
     ξ_minus = ξ(ξs_minus,σ_minus,rs,rs0)

@@ -2,7 +2,7 @@ using ForwardDiff
 using Plots
 using QuadGK
 using DelimitedFiles
-using HypergeometricFunctions
+using HypergeometricFunctions_Mod
 
 #General Constants
 ##########################################################################################################################################################
