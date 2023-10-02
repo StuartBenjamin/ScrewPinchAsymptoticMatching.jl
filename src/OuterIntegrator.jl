@@ -3,6 +3,7 @@ using Statistics
 using Interpolations
 using StaticArrays
 using DifferentialEquations
+using OrdinaryDiffEq
 using ForwardDiff
 using Plots
 using Optim

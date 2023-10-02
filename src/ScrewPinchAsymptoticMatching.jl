@@ -19,12 +19,15 @@ using DataFrames
 
 using QuadGK
 using DelimitedFiles
-using HypergeometricFunctions
+using HypergeometricFunctions_Mod
 
 using Interpolations
 using StaticArrays
 using DifferentialEquations
+using OrdinaryDiffEq
 using Optim
+using Roots
+using Random
 
 const mu0 = 4*pi*1e-7
 const H2_mass = 2*1.6605e-27
@@ -54,6 +57,11 @@ export raw_delta_prime, Psi_w_scales, plot_full_Psis, k_, g_, find_rs
 
 include("OuterAsymptotics.jl")
 export plot_full_Psis_w_frobenius, Δl_Δr_calculator, Δl_Δr_calculator_zeroPressure, Δl_Δr_xmin, Δl_Δr_xmin_visualiser
+
+#include("IdealStability.jl")
+#export test_ideal_stability, test_Suydam, get_ξ_plus_solout, get_ξ_minus_solout, ideal_stability_solin, ideal_stability_solout, ideal_nowall_external_stability
+
+#include("DataBaseGen.jl")
 
 include("GeneratingInnerTerms.jl")
 export generateInnerTerms_ScrewPinch_Scaffidi, generateInnerTerms_ScrewPinch_Glass75
