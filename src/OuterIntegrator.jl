@@ -58,7 +58,7 @@ function find_rs_Optim(q,m,n,rb,q0,ν,rs0;verbose=true)
 
     verbose && display(p1)
 
-    return res.minimizer[1], p1
+    return res.minimizer[1] #, p1
 end
 
 function find_rs(q,m,n,rb,q0,ν,rs0; verbose=true, useOptim=false)
@@ -90,7 +90,7 @@ function find_rs(q,m,n,rb,q0,ν,rs0; verbose=true, useOptim=false)
 
     verbose && display(p1)
 
-    return rs, p1
+    return rs #, p1
 end
 
 ##########################################################################################################################################################

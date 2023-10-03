@@ -542,7 +542,7 @@ function find_rs_Optim(q,m,n,rb;verbose=true)
 
     verbose && display(p1)
 
-    return res.minimizer[1], p1
+    return res.minimizer[1] #, p1
 end
 
 function find_rs(q,m,n,rb;verbose=true, useOptim=false, return_plot=false)
