@@ -50,7 +50,7 @@ include("ChandraScrewPinchEquilibrium.jl")
 export Furth_Equil, Chandra_Equil, Scaffidi_Equil, print_equil_data
 
 include("ModularCurrentProfile.jl")
-export integral, rJt_integral, initialise_internalInt_Spline, Bp_Spline, internalInt_Spline, Bt_Spline, Spline_Equil, diff_spln, forwarddiff_spln
+export integral, rJt_integral, initialise_internalInt_Spline, Bp_Spline, internalInt_Spline, Bt_Spline, Spline_Equil, diff_spln, forwarddiff_spln, find_rs
 
 include("OuterIntegrator.jl")
 export raw_delta_prime, Psi_w_scales, plot_full_Psis, k_, g_, find_rs
