@@ -42,9 +42,9 @@ function test_ideal_stability(Bp, Bt, dpdr, R0, r0, rb; m1ncap = 7, m0ncap=3, rs
                 return false
             end
 
-            if !ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, del; integrator_reltol=integrator_reltol, plot_solution=false, return_psi_small=return_psi_small)
+            if !ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=false, return_psi_small=return_psi_small)
                 verbose && print("Equilibrium unstable to ideal mode n=$(n),m=$(m).\n")
-                verbose && ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, del; integrator_reltol=integrator_reltol, plot_solution=true)
+                verbose && ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=true)
                 return false
             end
         end
@@ -87,7 +87,7 @@ function test_ideal_stability(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del, q;
                 return false
             end
 
-            if !ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, del; integrator_reltol=integrator_reltol, plot_solution=false, return_psi_small=return_psi_small)
+            if !ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=false, return_psi_small=return_psi_small)
                 return false
             end
         else
@@ -115,8 +115,8 @@ function test_ideal_stability(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del, q;
                 return ideal_stability_solin(solin, del, r0, rs)
             end
 
-            if case==3 || !ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, del; integrator_reltol=integrator_reltol, plot_solution=false)
-                return ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, del; integrator_reltol=integrator_reltol, plot_solution=true, return_psi_small=return_psi_small)
+            if case==3 || !ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=false)
+                return ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=true, return_psi_small=return_psi_small)
             end
         else
             k = k_(n,R0)
@@ -171,7 +171,7 @@ function ideal_stability_solin(solin, del, r0, rs)
     return true
 end
 
-function ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, del; integrator_reltol=1e-20, plot_solution=false, return_psi_small=false)
+function ideal_stability_out(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=1e-20, plot_solution=false, return_psi_small=false)
     del, ξ_plus, ξ_minus, ξ_plus_prime, ξ_minus_prime, solin, solout, inScale, outScale, Δl, Δr, ξl, ξr, cl, cr, psi_l, psi_r = Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; bigoutput=true, integrator_reltol=integrator_reltol, plot_solution=false, plot_soln=false)
     return ideal_stability_out(Bp, Bt, dpdr, k, m, rs, rb, del, ξ_plus, ξ_minus, ξ_plus_prime, ξ_minus_prime, solin, solout, inScale, outScale, Δl, Δr, ξl, ξr, cl, cr, psi_l, psi_r; integrator_reltol=integrator_reltol, plot_solution=plot_solution, return_psi_small=return_psi_small)
 end
