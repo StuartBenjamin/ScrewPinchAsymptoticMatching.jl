@@ -479,7 +479,7 @@ function Spline_Equil(Jt::CubicSpline,p::Union{Function,CubicSpline},Bt0::Real,R
         p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false)
         p5=scatter!(Jt.xs,Jt.(Jt.xs),title = "Toroidal current",xlabel="r (m)",ylabel="Amps/m^2",label=false)
         p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
-        p isa CubicSpline && p6=plot!(plotrvec,Jp2.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
+        p isa CubicSpline && (p6=plot!(plotrvec,Jp2.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false))
 
         outerp6 = plot(p1,p2,p3,p4,p5,p6)
         display(outerp6)
