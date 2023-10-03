@@ -177,7 +177,7 @@ end
     #Convert the matched ξ's back to Psi's
     #All occurs within zl_zr_calculator, Δl_Δr_calculator.
 
-function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=10^(-20), plot_solution=true, del2 = 0.0, plotwidth=10, plot_soln = true, plot_soln_1=false, kwargs...)
+function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; integrator_reltol=10^(-20), plot_solution=true, del2 = 0.0, plotwidth=10, plot_soln = true, plot_soln_1=false, bigoutput=false, kwargs...)
     f__= r -> f_(k, m, Bt, Bp)(r)
     g__ = r -> g_(k, m, dpdr, Bt, Bp)(r)
     ξ_plus, ξ_minus, σ_plus, σ_minus = ξ_plus_minus(f__, g__, rs, rs0, nmax; kwargs...)
@@ -215,6 +215,10 @@ function Δl_Δr_calculator(Bp, Bt, dpdr, k, m, r0, rs, rb, rs0, nmax, del; inte
 
     plot_soln && plot_full_Psis_w_frobenius(solin, solout, inScale, outScale2, psi_l, psi_r, del2, nmax, rs; plotwidth=plotwidth, plot_soln_1=plot_soln_1)
     ############################################################################################################################################################
+
+    if bigoutput
+        return del2, ξ_plus, ξ_minus, ξ_plus_prime, ξ_minus_prime, solin, solout, inScale, outScale, Δl, Δr, ξl, ξr, cl, cr, psi_l, psi_r
+    end
 
     return Δl,Δr,del2
 end
