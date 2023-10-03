@@ -534,7 +534,7 @@ function find_rs_Optim(q,m,n,rb;verbose=true)
         p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="q = $(m)/$(n)",line=:dash, xlabel="r (m)")
         p1 = vline!([res.minimizer],label="resonant surface location",line=:dash)
     else    
-        @warn "Your chosen rbtional surface lies outside your minor rbdius!"
+        verbose && @warn "Your chosen rational surface lies outside your minor radius!"
         p1 = plot(0:(rb/300):rb,[q(i) for i in 0:(rb/300):rb],title="q profile",label=false)
         p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="proposed rational q-value",line=:dash, xlabel="r (m)")
         p1 = vline!([res.minimizer],label="proposed resonant surface location",line=:dash)
