@@ -113,8 +113,9 @@ test_ideal_stability(Bp_s50, Bt_s50, dpdr_s50, k, m, r0, rs_s50, rb, rs0, nmax, 
 Δl_Δr_calculator(Bpc, Btc, dpdrc, k, m, r0, rsc, rb, rs0, nmax, del)
 Δl_Δr_calculator(Bp_s50, Bt_s50, dpdr_s50, k, m, r0, rs_s50, rb, rs0, nmax, del)
 
-test_ideal_stability(Bp, Bt, dpdr, R0, r0, rs, rb;verbose=true, ignore_Suydam=true)
-
+test_ideal_stability(Bp, Bt, dpdr, R0, r0, rb;verbose=true, ignore_Suydam=true)
+test_ideal_stability(Bpc, Btc, dpdrc, R0, r0, rb;verbose=true, ignore_Suydam=false)
+test_ideal_stability(Bp_s50, Bt_s50, dpdr_s50, R0, r0, rb;verbose=true, ignore_Suydam=true)
 
 f__= r -> f_(k, m, Btc, Bpc)(r)
 g__ = r -> g_(k, m, dpdrc, Btc, Bpc)(r)
