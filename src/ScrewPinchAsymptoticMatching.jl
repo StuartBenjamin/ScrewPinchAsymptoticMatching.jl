@@ -56,7 +56,7 @@ include("OuterIntegrator.jl")
 export raw_delta_prime, Psi_w_scales, plot_full_Psis, k_, g_, find_rs
 
 include("OuterAsymptotics.jl")
-export plot_full_Psis_w_frobenius, Δl_Δr_calculator, Δl_Δr_calculator_zeroPressure, Δl_Δr_xmin, Δl_Δr_xmin_visualiser
+export plot_full_Psis_w_frobenius, Δl_Δr_calculator, Δl_Δr_calculator_zeroPressure, Δl_Δr_xmin, Δl_Δr_xmin_visualiser, ξ_plus_minus, f_
 
 #include("IdealStability.jl")
 #export test_ideal_stability, test_Suydam, get_ξ_plus_solout, get_ξ_minus_solout, ideal_stability_solin, ideal_stability_solout, ideal_nowall_external_stability

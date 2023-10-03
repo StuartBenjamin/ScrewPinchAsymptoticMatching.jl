@@ -1,5 +1,5 @@
 
-function test_ideal_stability(Bp, Bt, dpdr, R0, r0, rs, rb; m1ncap = 10, m0ncap=3 rs0=1e-5, nmax=8, del=1e-5, integrator_reltol=10^(-20), verbose=true, verify_sols=false, case=0, kwargs...)
+function test_ideal_stability(Bp, Bt, dpdr, R0, r0, rs, rb; m1ncap = 10, m0ncap=3, rs0=1e-5, nmax=8, del=1e-5, integrator_reltol=10^(-20), verbose=true, verify_sols=false, case=0, kwargs...)
     q = q_(Bt,Bp,R0)
 
     if !test_Suydam(Bt, q, dpdr, rb) 
