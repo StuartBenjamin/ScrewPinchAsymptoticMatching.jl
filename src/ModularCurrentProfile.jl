@@ -545,7 +545,7 @@ function find_rs_Optim(q,m,n,rb;verbose=true)
     return res.minimizer[1], p1
 end
 
-function find_rs(q,m,n,rb;verbose=true, useOptim=false)
+function find_rs(q,m,n,rb;verbose=true, useOptim=false, return_plot=false)
     useOptim && (return find_rs_Optim(q,m,n,rb;verbose=verbose))
     
     qtest = m/n
@@ -554,16 +554,20 @@ function find_rs(q,m,n,rb;verbose=true, useOptim=false)
     zeros = find_zeros(f1,0.0,rb)
 
     if length(zeros)>1
-        print("Multiple rs values detected: \n") 
-        print("rs = {$(zeros[1])")
+        verbose && print("Multiple rs values detected: \n") 
+        verbose && print("rs = {$(zeros[1])")
         for i in 2:length(zeros)
-            print(",$(zeros[i])")
+            verbose && print(",$(zeros[i])")
         end
         print("}\n")
+
+        return -2
     elseif length(zeros)==0
-        print("No zeros detected.\n")
-        @warn "Your chosen rational surface lies outside your minor radius!"
-        return find_rs_Optim(q,m,n,rb;verbose=verbose)
+        verbose && print("No zeros detected.\n")
+        verbose && @warn "Your chosen rational surface lies outside your minor radius!"
+
+        #return find_rs_Optim(q,m,n,rb;verbose=verbose)
+        return -1
     end
 
     rs = zeros[1]
@@ -574,5 +578,7 @@ function find_rs(q,m,n,rb;verbose=true, useOptim=false)
 
     verbose && display(p1)
 
-    return rs, p1
+    return_plot && (return rs, p1)
+
+    return rs
 end
