@@ -17,8 +17,10 @@ function test_ideal_stability(Bp, Bt, dpdr, R0, r0, rb; m1ncap = 7, m0ncap=3, rs
 
     for n in m1set
         rs = find_rs(q,m,n,rb;verbose=rs_verbose)
-        rs==-2 && @warn("Multiple rational surfaces detected.")
-        if rs==-1 
+        if rs==-2 
+            verbose && print("Multiple rational surfaces detected.")
+            return false
+        elseif rs==-1 
             verbose && print("rs outside q range. ")
             k = k_(n,R0)
             solin = integrate_psi_in(Bp, Bt, dpdr, k, m, r0, rb; integrator_reltol=integrator_reltol_no_rs, g=g_)

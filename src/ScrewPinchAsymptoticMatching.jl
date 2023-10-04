@@ -47,7 +47,7 @@ export contour_inner, generate_inner_ratios, generate_inner_ratios_Xvar, generat
 export countour_Q, GRPF_Q, D_Q_Xvarying, countour_Q_Xvarying, cylinder_root_start_Glass75
 
 include("ChandraScrewPinchEquilibrium.jl")
-export Furth_Equil, Chandra_Equil, Scaffidi_Equil, print_equil_data, q_
+export Furth_Equil, Chandra_Equil, Scaffidi_Equil, print_equil_data, q_, local_beta, pm
 
 include("ModularCurrentProfile.jl")
 export integral, rJt_integral, initialise_internalInt_Spline, Bp_Spline, internalInt_Spline, Bt_Spline, Spline_Equil, diff_spln, forwarddiff_spln, find_rs
