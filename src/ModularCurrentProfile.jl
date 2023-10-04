@@ -545,10 +545,13 @@ function find_rs_Optim(q,m,n,rb;verbose=true)
     return res.minimizer[1] #, p1
 end
 
-function find_rs(q,m,n,rb;verbose=true, useOptim=false, return_plot=false)
+function find_rs(q,m,n,rb;verbose=true, qtest=nothing, useOptim=false, return_plot=false)
     useOptim && (return find_rs_Optim(q,m,n,rb;verbose=verbose))
     
-    qtest = m/n
+    if qtest isa Nothing
+        qtest = m/n
+    end
+
     f1 = x -> abs(q(first(x))-qtest)
 
     zeros = find_zeros(f1,0.0,rb)
@@ -573,7 +576,8 @@ function find_rs(q,m,n,rb;verbose=true, useOptim=false, return_plot=false)
     rs = zeros[1]
 
     p1 = plot(0:(rb/300):rb,[q(i) for i in 0:(rb/300):rb],title="q profile",label=false)
-    p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="q = $(m)/$(n)",line=:dash, xlabel="r (m)")
+    qtest isa Nothing && (p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="q = $(m)/$(n)",line=:dash, xlabel="r (m)"))
+    !(qtest isa Nothing) && (p1 = plot!(0:(rb/300):rb,qtest.*ones(length(0:(rb/300):rb)),label="q = $(qtest)",line=:dash, xlabel="r (m)"))
     p1 = vline!([rs],label="resonant surface location",line=:dash)
 
     verbose && display(p1)
