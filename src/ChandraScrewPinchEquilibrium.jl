@@ -68,7 +68,17 @@ local_beta(p,Bt,Bp) = r -> p(r)/pm(Bt,Bp)(r)
 
 #Solving for current densities (Corrent to 5,6 sig fig relative to Mathematica)
 ##########################################################################################################################################################
-Jt_(Bp) = r -> 1/(mu0*r)*ForwardDiff.derivative(x->x*Bp(x),r)
+function Jt_(Bp) 
+    function Jt(r)
+        if r==0.0
+            return 1/(mu0*1e-20)*ForwardDiff.derivative(x->x*Bp(x),1e-20)
+        else
+            return 1/(mu0*r)*ForwardDiff.derivative(x->x*Bp(x),r)
+        end
+    end
+    return Jt
+end
+
 Jp_(Bt) = r -> -(1/(mu0))*ForwardDiff.derivative(Bt,r)
 
 #Confirming screw pinch equilibrium:
