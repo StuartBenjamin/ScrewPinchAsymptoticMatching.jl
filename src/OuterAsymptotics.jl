@@ -78,7 +78,7 @@ function ξ_plus_minus(f__::Function, g__::Function, rs, rs0, nmax; kwargs...)
     return ξ_plus, ξ_minus, σ_plus, σ_minus
 end
 
-function κ_(Bp, Bt, dpdr, k, m, rs; g1=gzero,test=false)
+function κ_(Bp, Bt, dpdr, k, m, rs; g1=gzero,test=false, verbose=false)
     κ_Furth(g1) = r -> (g1(k, m, dpdr, Bt, Bp)(r)/F(k, m, Bt, Bp)(r)+(dH(k, m)(r)*dF(k, m, Bt, Bp)(r)+H(k, m)(r)*d2F(k, m, Bt, Bp)(r)))/(H(k, m)(r)*dF(k, m, Bt, Bp)(r))
     κ_Nish(g1) = r -> (g1(k, m, dpdr, Bt, Bp)(r)/(F(k, m, Bt, Bp)(r)^2)+(dH(k, m)(r)*dF(k, m, Bt, Bp)(r)+H(k, m)(r)*d2F(k, m, Bt, Bp)(r))/F(k, m, Bt, Bp)(r))/H(k, m)(r)
     κ_Glass(g1) = r -> (r-rs)*κ_Nish(g1)(r)
@@ -95,7 +95,7 @@ function κ_(Bp, Bt, dpdr, k, m, rs; g1=gzero,test=false)
     if !isnan(κ_Furth(g1)(rs))
         return κ_Furth(g1)(rs)
     else
-        @warn("κ was nan, using an approximation (rel error = $((κ_Furth(g1)(rs+1e-10)-κ_Glass(g1)(rs+1e-10))/κ_Furth(g1)(rs+1e-10)))")
+        verbose && @warn("κ was nan, using an approximation (rel error = $((κ_Furth(g1)(rs+1e-10)-κ_Glass(g1)(rs+1e-10))/κ_Furth(g1)(rs+1e-10)))")
             #
         return κ_Furth(g1)(rs+1e-10)
     end

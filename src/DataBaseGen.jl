@@ -450,6 +450,26 @@ struct Equilibrium
     rs0::Number #Deprecated re-scaling of r, set to 1.0 (defined for Chandra equilibria but not splines).
 end
 
+struct ΔprimeScrew
+    rs::Number
+    m::Union{Number,Nothing}
+    n::Union{Number,Nothing}
+    Δl::Union{Number,Nothing}
+    Δr::Union{Number,Nothing}
+    Δprime::Union{Number,Nothing}
+    del::Union{Number,Nothing}
+    nmax::Union{Number,Nothing}
+    Δlzero::Union{Number,Nothing}
+    Δrzero::Union{Number,Nothing}
+    Δprimezero::Union{Number,Nothing}
+    delzero::Union{Number,Nothing}
+end
+
+struct ResistiveEquilibrium
+    equilibrium::Equilibrium
+    Δprimes::Union{ΔprimeScrew,AbstractArray{ΔprimeScrew}}
+end
+
 function gen_equilibria_Jts(Jts,pressure_profs; Bt0=10, R0=3, dpdr_vec=nothing, dpdr=nothing, rs0=1.0, qtest=nothing)
     function dpdr0(i)
         return nothing
@@ -705,9 +725,8 @@ end
 #Run stability codes 
 #########################################################################################
 
-function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_reltol=1e-20, plot_soln_equil=false, report_err=false)
-    outmatrix = []
-    deltaprimes = []
+function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_reltol=1e-20, plot_soln_equil=false, report_err=false, run_zero_pressure=false)
+    outequils = ResistiveEquilibrium[]
     inds = []
 
     k = k_(n, equilibria[1].R0)
@@ -715,29 +734,28 @@ function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_relt
     for (io,i) in enumerate(equilibria)    
         
         try                                    
-            outs = Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)           
-            push!(outmatrix,outs)
-            push!(deltaprimes,outs[1]+outs[2])
+            Δl,Δr,del2 = Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+
+            if run_zero_pressure
+                Δlzero, Δrzero, delzero = Δl_Δr_calculator_zeroPressure(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+
+                push!(outequils,ResistiveEquilibrium(i,ΔprimeScrew(i.rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,Δlzero,Δrzero,Δlzero-Δrzero,delzero)))
+            else
+                push!(outequils,ResistiveEquilibrium(i,ΔprimeScrew(i.rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,nothing,nothing,nothing,nothing)))
+            end
             push!(inds,io)
         catch
-            report_err && Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)   
+            if report_err
+                Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+                run_zero_pressure && Δl_Δr_calculator_zeroPressure(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+                run_zero_pressure && ResistiveEquilibrium(i,ΔprimeScrew(i.rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,Δlzero,Δrzero,Δlzero-Δrzero,delzero))
+                ResistiveEquilibrium(i,ΔprimeScrew(i.rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,nothing,nothing,nothing,nothing))
+            end
             continue
         end
     end
 
-    return deltaprimes, outmatrix, inds
-end
-
-function run_Δl_Δr_calculator_zeroPressure(equilibria, m, n, r0, nmax, del; integrator_reltol=1e-20)
-    outmatrix = []
-
-    k = k_(n, equilibria[1].R0)
-
-    for i in equilibria
-        push!(outmatrix,Δl_Δr_calculator_zeroPressure(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, del; integrator_reltol=integrator_reltol, plot_solution=false, plot_soln = false))
-    end
-
-    return outmatrix
+    return outequils, inds
 end
 
 #########################################################################################

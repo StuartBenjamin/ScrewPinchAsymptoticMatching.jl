@@ -128,7 +128,7 @@ plot_equil(equila3)
 
 
 equilas1 = gen_clean_equilibria(Jts[1:3],p; dpdr=dpdr, Bt0=10, R0=R0, ideal_verbose=true, qtest=1.9);
-equilas2 = gen_clean_equilibria(Jts,p; dpdr=dpdr, Bt0=10, R0=3, m1ncap=20, ideal_verbose=true) 
+equilas2 = gen_clean_equilibria(Jts[1:5],p; dpdr=dpdr, Bt0=10, R0=3, m1ncap=20, ideal_verbose=true) 
 equilas3 = gen_clean_equilibria(Jts[1:3],p_s50; Bt0=10, R0=R0, ideal_verbose=true, qtest=3.0);
 plot_Suydam(equila1[3])
 
@@ -144,8 +144,13 @@ maxbatches=100, J0bounds=[1.2*Jt(0.0),0.5*Jt(0.0)],Jedgebounds=[0.3*Jt(0.0),0.0*
 
 
 plot_equil(equilas11)
-deltaprimes, outmatrix, inds = run_Δl_Δr_calculator(equilas11, 3, 1, 1e-4, 8, 1e-5)
+outequils1, inds = run_Δl_Δr_calculator(equilas11, 3, 1, 1e-4, 8, 1e-5)
 
+outequils1_w0pressure, inds = run_Δl_Δr_calculator(equilas11, 3, 1, 1e-4, 8, 1e-5;run_zero_pressure=true)
+
+i=3
+
+print(outequils1_w0pressure[i].Δprimes.Δprimezero,outequils1_w0pressure[i].Δprimes.Δprime)
 
 run_Δl_Δr_calculator(equilas11[inds[1:3]], 3, 1, 1e-4, 8, 1e-5;plot_soln_equil=true)
 
@@ -182,15 +187,18 @@ for i in 1:loop_big_batch
     equils_loop=gen_n_clean_equilibria(Jtotmax,p,rb,10000,10; dpdr=dpdr,Bt0=10, R0=R0, ideal_verbose=false, qtest=m/n, Jtot_range = Jtotrange,maxgrad_width = rb/7,use_fine=true,use_coarse=true, monotonic=false, wobbles=3, area_integrated_max=1.0*maximum(Jtotrange), 
 maxbatches=100, J0bounds=[1.2*Jt(0.0),0.5*Jt(0.0)],Jedgebounds=[0.3*Jt(0.0),0.0*Jt(0.0)]);
 
-    deltaprimes, outmatrix, inds = run_Δl_Δr_calculator(equils_loop, m, n, 1e-4, nmax, 1e-5)
+    outequils, inds = run_Δl_Δr_calculator(equils_loop, m, n, 1e-4, nmax, 1e-5)
+    deltaprimes_zeros, outmatrix_zeros, inds_zeros = run_Δl_Δr_calculator_zeroPressure(equils_loop, m, n, 1e-4, 1e-5)
 
     push!(equils_store, equils_loop)
     push!(outputs_finitep_store, (deltaprimes, outmatrix, inds))
     #@save "n3_study_1.jld2" equils_store outputs_finitep_store 
 
-    push!(bigstore, (equils_loop, deltaprimes, outmatrix, inds))
+    push!(bigstore, (equils_loop, (deltaprimes, outmatrix, inds), (deltaprimes_zeros, outmatrix_zeros, inds_zeros))
     @save "n3_study_1.jld2" bigstore
 end
+
+length(bigstore[1][1])
 
 run_Δl_Δr_calculator([bigstore[1][1][1]], m, n, 1e-4, nmax, 1e-5; report_err=true)
 run_Δl_Δr_calculator([bigstore[1][1][3]], m, n, 1e-4, nmax, 1e-5; report_err=true)
