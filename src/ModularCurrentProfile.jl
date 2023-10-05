@@ -552,7 +552,7 @@ function find_rs(q,m,n,rb;verbose=true, qtest=nothing, useOptim=false, return_pl
         qtest = m/n
     end
 
-    f1 = x -> abs(q(first(x))-qtest)
+    f1 = x -> q(first(x))-qtest
 
     zeros = find_zeros(f1,0.0,rb)
 

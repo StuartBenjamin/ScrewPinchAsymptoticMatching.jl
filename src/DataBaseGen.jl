@@ -705,7 +705,7 @@ end
 #Run stability codes 
 #########################################################################################
 
-function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_reltol=1e-20)
+function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_reltol=1e-20, plot_soln_equil=false, report_err=false)
     outmatrix = []
     deltaprimes = []
     inds = []
@@ -713,12 +713,14 @@ function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_relt
     k = k_(n, equilibria[1].R0)
 
     for (io,i) in enumerate(equilibria)    
+        
         try                                    
-            outs = Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=false, plot_soln = false)           
+            outs = Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)           
             push!(outmatrix,outs)
             push!(deltaprimes,outs[1]+outs[2])
             push!(inds,io)
         catch
+            report_err && Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)   
             continue
         end
     end

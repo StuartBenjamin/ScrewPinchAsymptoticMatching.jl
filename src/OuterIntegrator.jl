@@ -65,7 +65,7 @@ function find_rs(q,m,n,rb,q0,ν,rs0; verbose=true, useOptim=false)
     useOptim && (return find_rs_Optim(q,m,n,rb,q0,ν,rs0;verbose=verbose))
 
     qtest = m/n
-    f1 = x -> abs(q(first(x))-qtest)
+    f1 = x -> q(first(x))-qtest
 
     zeros = find_zeros(f1,0.0,rb)
 
