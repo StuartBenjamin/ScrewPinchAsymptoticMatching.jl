@@ -28,6 +28,7 @@ using OrdinaryDiffEq
 using Optim
 using Roots
 using Random
+using Distributions
 
 const mu0 = 4*pi*1e-7
 const H2_mass = 2*1.6605e-27

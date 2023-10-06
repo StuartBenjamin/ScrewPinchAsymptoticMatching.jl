@@ -190,9 +190,10 @@ end
 
 function generate_cleaners(rb; max_ref = nothing, area_integrated_max=nothing, 
         Jtot_range=nothing, use_coarse=true, use_fine=true, maxval = nothing, minval=nothing,
-        wobbles = 3, monotonic=false, maxgrad_width = rb/6)
+        wobbles = 3, monotonic=false, maxgrad_width = rb/6, diagnose=false)
 
     cleaner_functions = []
+    labels = []
     
     monotonic_(f) = gradmax_exceeded(f,rb,0.0)
     wobbles_(f) = num_inflection_points(f,rb;max=wobbles)
@@ -211,40 +212,48 @@ function generate_cleaners(rb; max_ref = nothing, area_integrated_max=nothing,
         #1
         if !(maxval isa Nothing)
             push!(cleaner_functions,f -> max_exceeded_coarse(f,maxval))
+            push!(labels,"maxval coarse")
         end
 
         if !(minval isa Nothing)
             push!(cleaner_functions,f -> min_exceeded_coarse(f,minval))
+            push!(labels,"minval coarse")
         end
 
         #2
-        monotonic && (push!(cleaner_functions,monotonic_coarse)) 
+        monotonic && (push!(cleaner_functions,monotonic_coarse); push!(labels,"monotonic coarse")) 
         push!(cleaner_functions,f -> gradmax_exceeded_coarse(f,spline_narrow_max_(max_ref, rb, maxgrad_width;area_integrated_max=area_integrated_max); abs_val=true))
-                                    
+        push!(labels,"gradmax exceeded coarse")
+        
         #3
-        wobbles>=0 && (push!(cleaner_functions,wobbles_coarse))
+        wobbles>=0 && (push!(cleaner_functions,wobbles_coarse); push!(labels,"wobbles coarse"))  
     end
 
     #0 Integration
-    !(Jtot_range isa Nothing) && push!(cleaner_functions,Jt_tot_)
+    !(Jtot_range isa Nothing) && (push!(cleaner_functions,Jt_tot_); push!(labels,"Jtot range check"))
 
     if use_fine
         #1 Function eval
         if !(maxval isa Nothing)
             push!(cleaner_functions,f -> max_exceeded(f,rb,maxval))
+            push!(labels,"Maxval fine")
         end
 
         if !(minval isa Nothing)
             push!(cleaner_functions,f -> min_exceeded(f,rb,minval))
+            push!(labels,"Minval fine")
         end
 
         #2 Derivative eval
-        monotonic && (push!(cleaner_functions,monotonic_)) 
+        monotonic && (push!(cleaner_functions,monotonic_); push!(labels,"Monotonic fine")) 
         push!(cleaner_functions,f -> gradmax_exceeded(f,rb,spline_narrow_max_(max_ref, rb, maxgrad_width;area_integrated_max=area_integrated_max);abs_val=true))
+        push!(labels,"gradmax exceeded fine")
 
         #3 Double-derivative eval
-        wobbles>=0 && (push!(cleaner_functions,wobbles_))
+        wobbles>=0 && (push!(cleaner_functions,wobbles_); push!(labels,"wobbles fine"))
     end
+
+    diagnose && display(labels)
 
     return cleaner_functions
 end
@@ -261,12 +270,12 @@ function random_Int_in_range(intmax,intmin,numvals)
     return rand(intmin:intmax,numvals)
 end
 
-function randomJt(Jtotmax, numJts, rb; knotmax=7, knotmin=5, minJt=0.0, 
-    plot_profs=false, J0bounds=nothing, Jedgebounds=nothing)
+function randomJt(Jt_upper_bound, numJts, rb; knotmax=10, knotmin=5, minJt=0.0, 
+    plot_profs=false, J0bounds=nothing, Jedgebounds=nothing, useDirichlet=true, dirichlet_alpha=10)
 
     knotnums = random_Int_in_range(knotmax,knotmin,numJts)
 
-    splines_vals = random_in_range(Jtotmax/(2*pi),minJt,(numJts,knotmax))
+    splines_vals = random_in_range(Jt_upper_bound,minJt,(numJts,knotmax))
 
     if J0bounds isa Nothing
         start_vals = splines_vals[:,1]
@@ -291,7 +300,16 @@ function randomJt(Jtotmax, numJts, rb; knotmax=7, knotmin=5, minJt=0.0,
     Jt_vec = CubicSpline[]
 
     for i in 1:numJts
-        Jt = CubicSpline(range(0.0,rb;length=knotnums[i]),vcat(start_vals[i],splines_vals[i,2:(knotnums[i]-1)],end_vals[i]))
+        if !useDirichlet
+            Jt = CubicSpline(range(0.0,rb;length=knotnums[i]),vcat(start_vals[i],splines_vals[i,2:(knotnums[i]-1)],end_vals[i]))
+        else
+            x0 = 0.0
+            xend = rb
+            xintermediate = rb.*cumsum(rand(Dirichlet(knotnums[i]-1,dirichlet_alpha)))
+            xs = vcat(x0,xintermediate[1:end-1],xend)
+
+            Jt = CubicSpline(xs,vcat(start_vals[i],splines_vals[i,2:(knotnums[i]-1)],end_vals[i]))
+        end
         push!(Jt_vec, Jt)
     end
 
@@ -346,10 +364,17 @@ end
 #Clean Spline Generation and plotting:
 #########################################################################################
 
-function clean_vec(in_vec,cleaner_functions)
+function clean_vec(in_vec,cleaner_functions;diagnose=false)
     valid = trues(length(in_vec))
     valid_inds = 1:length(in_vec)
 
+    if diagnose
+        num_fails = zeros(Int,length(cleaner_functions))
+        for (io,cleaner_func) in enumerate(cleaner_functions)
+            num_fails[io] += length(filter(x->!cleaner_func(x),in_vec))
+        end
+        display(num_fails)
+    end
     for cleaner_func in cleaner_functions
         valid_inds = filter(x->cleaner_func(in_vec[x]),valid_inds) 
     end
@@ -357,14 +382,14 @@ function clean_vec(in_vec,cleaner_functions)
     return in_vec[valid_inds]
 end
 
-function gen_n_clean_Jts(Jtotmax,rb,batch_size,num_clean,cleaner_functions; maxbatches=100, verbose=true, kwargs...)
+function gen_n_clean_Jts(Jt_upper_bound,rb,batch_size,num_clean,cleaner_functions; maxbatches=100, verbose=true, kwargs...)
     clean_counter = 0
     Jt_vec = CubicSpline[]
     i=1
 
     while clean_counter < num_clean && (i<(maxbatches+1))
         verbose && print("Batch $(i) of $(batch_size) random splines being generated. Valid count = $(clean_counter).\n")
-        Jt_temps = clean_vec(randomJt(Jtotmax, batch_size, rb; kwargs...),cleaner_functions)
+        Jt_temps = clean_vec(randomJt(Jt_upper_bound, batch_size, rb; kwargs...),cleaner_functions)
 
         clean_counter += length(Jt_temps)
 
@@ -418,11 +443,11 @@ function plot_profiles(Jt_vec, rb; p_vec=nothing, plotrvec = range(0.000001,rb,2
     end
 end
 
-function gen_n_clean_Jts(Jtotmax,rb,batch_size,num_clean; maxbatches=100, verbose=true, 
+function gen_n_clean_Jts(Jt_upper_bound,rb,batch_size,num_clean; maxbatches=100, verbose=true, 
     max_ref = nothing, area_integrated_max=nothing, Jtot_range=nothing, use_coarse=true, 
     use_fine=true, maxval = nothing, minval=nothing, wobbles = 3, monotonic=false, maxgrad_width = rb/6, kwargs...)
 
-    return gen_n_clean_Jts(Jtotmax,rb,batch_size,num_clean,generate_cleaners(rb; max_ref = max_ref, 
+    return gen_n_clean_Jts(Jt_upper_bound,rb,batch_size,num_clean,generate_cleaners(rb; max_ref = max_ref, 
         area_integrated_max=area_integrated_max, Jtot_range=Jtot_range, use_coarse=use_coarse, use_fine=use_fine, maxval = maxval, minval=minval,
         wobbles = wobbles, monotonic=monotonic, maxgrad_width = maxgrad_width); maxbatches=maxbatches,verbose=verbose, kwargs...)
 end
@@ -522,7 +547,7 @@ function gen_clean_equilibria(Jts,pressure_profs; Bt0=10, R0=3, dpdr_vec=nothing
     return clean_vec(equilibria,cleaners)
 end
 
-function gen_n_clean_equilibria(Jtotmax,p,rb,batch_size,num_clean; 
+function gen_n_clean_equilibria(Jt_upper_bound,p,rb,batch_size,num_clean; 
                             maxbatches=100, maxJtbatches=1, verbose=true, Bt0=10, R0=3, dpdr_vec=nothing, 
                             dpdr=nothing, max_beta=0.1, qtest=nothing, maxq=nothing, minq=nothing, 
                             qedgerange=nothing, shear_max=nothing, shear_min=nothing,
@@ -535,16 +560,30 @@ function gen_n_clean_equilibria(Jtotmax,p,rb,batch_size,num_clean;
 
     while clean_counter < num_clean && (i<(maxbatches+1))
         verbose && print("Batch $(i) of $(batch_size) random equilibria being generated. Valid count = $(clean_counter).\n")
-        Jt_temps = gen_n_clean_Jts(Jtotmax,rb,batch_size,num_clean; maxbatches=maxJtbatches, verbose=false, kwargs...)
+        Jt_temps = nothing
 
-        equil_temps = gen_clean_equilibria(Jt_temps,p; Bt0=Bt0, R0=R0, dpdr_vec=dpdr_vec, 
-                                            dpdr=dpdr, rs0=rs0, r0=r0, max_beta=max_beta, qtest=qtest, maxq=maxq, minq=minq, 
-                                            qedgerange=qedgerange, shear_max=shear_max, shear_min=shear_min,ideal_mhd=ideal_mhd, m1ncap = m1ncap, m0ncap=m0ncap, nmax=nmax, del=del, integrator_reltol=integrator_reltol, integrator_reltol_no_rs=integrator_reltol_no_rs, verbose=verbose, ideal_verbose=ideal_verbose, verify_sols=verify_sols, case=case, ignore_Suydam=ignore_Suydam, return_psi_small=return_psi_small)
+        try
+            Jt_temps = gen_n_clean_Jts(Jt_upper_bound,rb,batch_size,num_clean; maxbatches=maxJtbatches, verbose=false, kwargs...)
+        catch
+            print("Batch $(i) Jt generation failed\n.")
+            i+=1
+            continue
+        end
+        equil_temps = nothing
 
-        clean_counter += length(equil_temps)
+        try
+            equil_temps = gen_clean_equilibria(Jt_temps,p; Bt0=Bt0, R0=R0, dpdr_vec=dpdr_vec, 
+                                                dpdr=dpdr, rs0=rs0, r0=r0, max_beta=max_beta, qtest=qtest, maxq=maxq, minq=minq, 
+                                                qedgerange=qedgerange, shear_max=shear_max, shear_min=shear_min,ideal_mhd=ideal_mhd, m1ncap = m1ncap, m0ncap=m0ncap, nmax=nmax, del=del, integrator_reltol=integrator_reltol, integrator_reltol_no_rs=integrator_reltol_no_rs, verbose=verbose, ideal_verbose=ideal_verbose, verify_sols=verify_sols, case=case, ignore_Suydam=ignore_Suydam, return_psi_small=return_psi_small)
 
-        append!(equilibria_vec,  equil_temps)
-        i+=1
+            clean_counter += length(equil_temps)
+
+            append!(equilibria_vec,  equil_temps)
+            i+=1
+        catch
+            print("Batch $(i) equilibria generation and cleaning failed\n.")
+            i+=1
+        end
     end
 
     print("$(clean_counter) of $(i*batch_size) randomly generated equilibria meet requirements.\n")
@@ -579,11 +618,15 @@ function plot_equil_short(equilibrium::Equilibrium; plotrvec = range(0.000001,eq
     return p1,p2,p3,p4
 end
 
-function plot_equil(equilibria::AbstractArray{Equilibrium}; case=0, plotrvec = range(0.000001,equilibria[1].rb,200), titlefontsize=5, guidefontsize=5, tickfontsize=2, kwargs...)
+function plot_equil(equilibrium::ResistiveEquilibrium;kwargs...)
+    return plot_equil(equilibrium.equilibrium;kwargs...)
+end
+
+function plot_equil(equilibria::AbstractArray{Equilibrium}; case=0, plotrvec = range(0.000001,equilibria[1].rb,200), titlefontsize=6, guidefontsize=6, tickfontsize=3, kwargs...)
     plots=[]
 
     if length(equilibria)==1 || case==1
-        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
+        a1,a2,a3,a4=plot_equil(equilibria[1];plotrvec=plotrvec)
 
         pdog=display(plot(a1,a2,a3,a4,
                             layout = (1, 4)))
@@ -632,6 +675,10 @@ function plot_equil(equilibria::AbstractArray{Equilibrium}; case=0, plotrvec = r
     return pdog
 end
 
+function plot_equil(equilibria::AbstractArray{ResistiveEquilibrium}; kwargs...)
+    return plot_equil([i.equilibrium for i in equilibria];kwargs...)
+end
+
 function local_beta_(equilibrium::Equilibrium)
     return local_beta(equilibrium.p,equilibrium.Bt,equilibrium.Bp)
 end
@@ -653,6 +700,26 @@ end
 function plot_Suydam(equilibrium)
     test_Suydam(equilibrium.Bt, equilibrium.q, equilibrium.dpdr, equilibrium.rb; plotresults=true)
 end
+
+function plot_current_profiles(equilibria::AbstractArray{Equilibrium};plotrvec = range(0.000001,equilibria[1].rb,200))
+    p1 = nothing
+    for (io,i) in enumerate(equilibria)
+        if io==1 
+            p1 = plot(plotrvec,i.Jt.(plotrvec);label=false)
+            #display(vline!([rss[i]];label=false))
+        else
+            p1 = plot!(plotrvec,i.Jt.(plotrvec);title = "Toroidal current profiles",label=false, xlabel="r (m)", ylabel="Jt current density (A/m^2)")
+            #display(vline!([rss[i]];label=false))
+        end
+    end
+    display(p1)
+
+    return p1
+end
+
+function plot_current_profiles(equilibria::AbstractArray{ResistiveEquilibrium};plotrvec = range(0.000001,equilibria[1].equilibrium.rb,200))
+    return plot_current_profiles([i.equilibrium for i in equilibria];plotrvec = plotrvec)
+end    
 
 #########################################################################################
 #Generate equilibrium cleaners
@@ -725,7 +792,7 @@ end
 #Run stability codes 
 #########################################################################################
 
-function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_reltol=1e-20, plot_soln_equil=false, report_err=false, run_zero_pressure=false)
+function run_Δl_Δr_calculator(equilibria, m::Int, n::Int, r0, nmax, del; integrator_reltol=1e-20, plot_soln_equil=false, report_err=false, run_zero_pressure=false)
     outequils = ResistiveEquilibrium[]
     inds = []
 
@@ -745,6 +812,7 @@ function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_relt
             end
             push!(inds,io)
         catch
+            print("Δl_Δr_calculation failed\n.")
             if report_err
                 Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
                 run_zero_pressure && Δl_Δr_calculator_zeroPressure(i.Bp, i.Bt, i.dpdr, k, m, r0, i.rs, i.rb, i.rs0, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
@@ -758,53 +826,83 @@ function run_Δl_Δr_calculator(equilibria, m, n, r0, nmax, del; integrator_relt
     return outequils, inds
 end
 
+
+function run_Δl_Δr_calculator(equilibria, ms::AbstractArray{Int}, n::Int, r0, nmax, del; integrator_reltol=1e-20, plot_soln_equil=false, report_err=false, run_zero_pressure=false)
+    outequils = ResistiveEquilibrium[]
+    inds = []
+
+    k = k_(n, equilibria[1].R0)
+
+    for (io,i) in enumerate(equilibria)    
+        try     
+            Δprimes = ΔprimeScrew[]
+            
+            for m in ms
+                rs = find_rs(i.q,m,n,i.Jt.xs[end];verbose=false)
+                if rs > 0
+                    Δl,Δr,del2 = Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+
+                    if run_zero_pressure
+                        Δlzero, Δrzero, delzero = Δl_Δr_calculator_zeroPressure(i.Bp, i.Bt, i.dpdr, k, m, r0, rs, i.rb, i.rs0, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+                        push!(Δprimes,ΔprimeScrew(rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,Δlzero,Δrzero,Δlzero-Δrzero,delzero))
+                    else
+                        push!(Δprimes,ΔprimeScrew(rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,nothing,nothing,nothing,nothing))
+                    end
+                end
+            end
+
+            push!(outequils,ResistiveEquilibrium(i,Δprimes))
+            push!(inds,io)
+        catch
+            print("Δl_Δr_calculation failed\n.")
+            if report_err  #same code to identify the error
+                Δprimes = ΔprimeScrew[]
+            
+                for m in ms
+                    rs = find_rs(i.q,m,n,i.Jt.xs[end];verbose=false)
+                    if rs > 0
+                        Δl,Δr,del2 = Δl_Δr_calculator(i.Bp, i.Bt, i.dpdr, k, m, r0, rs, i.rb, i.rs0, nmax, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+    
+                        if run_zero_pressure
+                            Δlzero, Δrzero, delzero = Δl_Δr_calculator_zeroPressure(i.Bp, i.Bt, i.dpdr, k, m, r0, rs, i.rb, i.rs0, del; integrator_reltol=integrator_reltol, plot_solution=plot_soln_equil, plot_soln = plot_soln_equil)
+                            push!(Δprimes,ΔprimeScrew(rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,Δlzero,Δrzero,Δlzero-Δrzero,delzero))
+                        else
+                            push!(Δprimes,ΔprimeScrew(rs,m,n,Δl,Δr,Δl+Δr,del2,nmax,nothing,nothing,nothing,nothing))
+                        end
+                    end
+                end
+    
+                #push!(outequils,ResistiveEquilibrium(i,Δprimes))
+                #push!(inds,io)
+            end
+            continue
+        end
+    end
+
+    return outequils, inds
+end
+
 #########################################################################################
-#Old Testing
+#Gen euilibria and run stability codes
 #########################################################################################
 
-if false
-    #Jt_vec=randomJt(Jtotmax, Jtotmin, numJts, rb);
+function gen_equil_run_Δl_Δr(f_gen_equilibria::Function, batch_size, num_clean, ms::AbstractArray{Int}, n, r0, nmax, del; filename = nothing, loop_big_batch=20, path=nothing, kwargs...)
+    cd(path)
+    resistive_equils_store = []
+    equils_and_inds = []
 
-    Jt_vec = clean_vec(randomJt(Jtotmax, 5000, rb;J0bounds=5e5, Jedgebounds=1e5),generate_cleaners(rb ; Jtot_range = [Jtotmax, Jtotmin], maxgrad_width = rb/5,monotonic=false))
-    plot_profiles(Jt_vec, rb;ylims = (0.0,1.5*Jtotmax/(pi*rb^2)))
-    display(length(Jt_vec))
+    for i in 1:loop_big_batch
+        equils_loop=f_gen_equilibria(batch_size,num_clean)
 
-    Jtotmax = 1.5*total_plasma_current(Jt,rb)
-    Jtotmin = 0.5*total_plasma_current(Jt,rb)
-    Jtotrange=[Jtotmax, Jtotmin]
+        resistive_equils, inds = run_Δl_Δr_calculator(equils_loop, ms, n, r0, nmax, del; kwargs...)
 
-    #Jts = gen_n_clean_Jts(Jtotmax,rb,1000,10,generate_cleaners(rb, [Jtotmax, Jtotmin];Jt_maxgrad_width = rb/5,Jtmonotonic=true); J0bounds=5e5, Jedgebounds=1e5)
-    Jts = gen_n_clean_Jts(Jtotmax,rb,5000,80,generate_cleaners(rb ; Jtot_range = Jtotrange,maxgrad_width = rb/100,use_fine=false,use_coarse=true, monotonic=false, wobbles=1, area_integrated_max=maximum(Jtotrange)); 
-                            maxbatches=10, J0bounds=[0.8*Jt(0.0),1.2*Jt(0.0)], Jedgebounds=[1.2*Jt(2.0),0.8*Jt(2.0)])
-    plot_profiles(Jts, rb;ylims = (0.0,1.4*Jt(0.0)))
+        push!(resistive_equils_store, resistive_equils)
+        push!(equils_and_inds, (equils_loop, inds))
 
+        if !(filename isa Nothing)
+            @save filename resistive_equils_store equils_and_inds
+        end
+    end
 
-    ps = gen_n_clean_pressure_profiles(1e20,rb,500,10,generate_cleaners(rb, [Jtotmax, Jtotmin]; maxgrad_width = rb/100,use_fine=false,use_coarse=true, monotonic=false, wobbles=1);
-                            maxbatches=10, J0bounds=[0.8*Jt(0.0),1.2*Jt(0.0)], Jedgebounds=[1.2*Jt(2.0),0.8*Jt(2.0)])
-
-    plot_profiles(randomJt(Jtotmax, 1000, rb;J0bounds=5e5, Jedgebounds=1e5),rb)
-
-    Jtotmax = 1.5*total_plasma_current(Jt,rb)
-    Jtotmin = 0.5*total_plasma_current(Jt,rb)
-    Jtotrange=[Jtotmax, Jtotmin]
-
-
-    batch_size=1000
-    num_clean=20
-
-    Jts = gen_n_clean_Jts(Jtotmax,rb,batch_size,num_clean; maxbatchesm=100, verbose=true, 
-        max_ref = nothing, area_integrated_max=Jtotmax, Jtot_range=Jtotrange, use_coarse=true, 
-        use_fine=true, maxval = nothing, wobbles = 3, monotonic=true, maxgrad_width = rb/6)
-    plot_profiles(Jts, rb;ylims = (0.0,1.4*Jt(0.0)))
-
-    gen_n_clean_equilibria(Jtotmax,p,rb,500,5; 
-        maxbatches=10, verbose=true, Bt0=10, R0=3, dpdr_vec=nothing, 
-        dpdr=nothing, max_beta=0.1, maxq=nothing, minq=nothing, 
-        qedgerange=nothing, shear_max=nothing, shear_min=nothing,
-        max_ref = nothing, area_integrated_max=Jtotmax, Jtot_range=Jtotrange, use_coarse=true, 
-        use_fine=true, maxval = nothing, wobbles = 3, monotonic=true, maxgrad_width = rb/6
-        )
-
-    #Ideas:
-        #Make a rough version of gradmax_exceeded, max_exceeded, num_wobbles and monotonic (should be way faster)
+    return resistive_equils_store, equils_and_inds
 end
