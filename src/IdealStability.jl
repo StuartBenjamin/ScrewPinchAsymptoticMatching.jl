@@ -4,6 +4,11 @@ function test_ideal_stability(Bp, Bt, dpdr, R0, r0, rb; m1ncap = 7, m0ncap=3, rs
     
     q = q_(Bt,Bp,R0)
 
+    if length(find_zeros(r -> (q(r) - 1.0),0.0,rb))>0 || (q(rb/2)<1.0)
+        verbose && print("q crosses 1. Removing this case...\n")
+        return false
+    end
+
     if !test_Suydam(Bt, q, dpdr, rb) && !ignore_Suydam
         verbose && print("Equilibrium ideal MHD unstable, failed Suydam criteria.\n")
         return false
