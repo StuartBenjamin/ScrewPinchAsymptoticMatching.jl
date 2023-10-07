@@ -475,6 +475,10 @@ struct Equilibrium
     rs0::Number #Deprecated re-scaling of r, set to 1.0 (defined for Chandra equilibria but not splines).
 end
 
+function Base.show(io::IO, equilibrium::Equilibrium) 
+    print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(equilibrium.Jt);sigdigits=3),".")
+end
+
 struct ΔprimeScrew
     rs::Number
     m::Union{Number,Nothing}
@@ -490,9 +494,28 @@ struct ΔprimeScrew
     delzero::Union{Number,Nothing}
 end
 
+function Base.show(io::IO, Δprimes::ΔprimeScrew) 
+    print(io, "Resistive $(Δprimes.m)/$(Δprimes.n) mode analysis")
+end
+
 struct ResistiveEquilibrium
     equilibrium::Equilibrium
     Δprimes::Union{ΔprimeScrew,AbstractArray{ΔprimeScrew}}
+end
+
+function Base.show(io::IO, req::ResistiveEquilibrium) 
+    if req.Δprimes isa AbstractArray
+        mnlist = ""
+        for i in req.Δprimes
+            mnlist = mnlist*"$(i.m)/$(i.n) "
+        end
+
+        print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(req.equilibrium.Jt);sigdigits=3),". Modes analysed = ",mnlist)
+    elseif req.Δprimes isa ΔprimeScrew
+        print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(req.equilibrium.Jt);sigdigits=3),". Modes analysed = ","$(req.Δprimes.m)/$(req.Δprimes.n) ")
+    else 
+        print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(req.equilibrium.Jt);sigdigits=3),".")
+    end
 end
 
 function gen_equilibria_Jts(Jts,pressure_profs; Bt0=10, R0=3, dpdr_vec=nothing, dpdr=nothing, rs0=1.0, qtest=nothing)
@@ -595,19 +618,24 @@ end
 #Plotting Equilibria
 #########################################################################################
 
-function plot_equil(equilibrium::Equilibrium; plotrvec = range(0.000001,equilibrium.rb,200))
+function plot_equil(equilibrium::Equilibrium; plotrvec = range(0.000001,equilibrium.rb,200), Jt_ref = nothing)
     p1=plot(plotrvec,equilibrium.Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
     p2=plot(plotrvec,equilibrium.Bt.(plotrvec),title = "Bt in Teslas",label=false,ylims=(0.0,2*equilibrium.Bt(equilibrium.rb)),xlabel="r (m)",ylabel="T")
     p3=plot(plotrvec,equilibrium.q.(plotrvec),title = "q",label=false,xlabel="r (m)")
     p4=plot(plotrvec,local_beta(equilibrium.p,equilibrium.Bt,equilibrium.Bp).(plotrvec),title = "Local Plasma β",xlabel="r (m)",label=false)
-    p5=plot(plotrvec,equilibrium.Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false)
+
+    if Jt_ref isa Nothing
+        p5=plot(plotrvec,equilibrium.Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false, ylims=nothing)
+    else
+        p5=plot(plotrvec,equilibrium.Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false, ylims = (0.0,Jt_ref))
+    end
     p6=plot(plotrvec,equilibrium.Jp.(plotrvec),title = "Poloidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false)
 
     outerp6 = plot(p1,p2,p3,p4,p5,p6)
     display(outerp6)
 end
 
-function plot_equil_short(equilibrium::Equilibrium; plotrvec = range(0.000001,equilibrium.rb,200),guidefontsize=3,titlefontsize=3,tickfontsize=2,kwargs...)
+function plot_equil_short(equilibrium::Equilibrium; plotrvec = range(0.000001,equilibrium.rb,200),guidefontsize=3,titlefontsize=3,tickfontsize=2, ylims=nothing, kwargs...)
     p1=plot(plotrvec,equilibrium.Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
     p2=plot(plotrvec,equilibrium.Bt.(plotrvec),title = "Bt in Teslas",label=false,ylims=(0.0,2*equilibrium.Bt(equilibrium.rb)),xlabel="r (m)",ylabel="T", titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
     p3=plot(plotrvec,equilibrium.q.(plotrvec),title = "q",label=false,xlabel="r (m)", titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
@@ -622,35 +650,38 @@ function plot_equil(equilibrium::ResistiveEquilibrium;kwargs...)
     return plot_equil(equilibrium.equilibrium;kwargs...)
 end
 
-function plot_equil(equilibria::AbstractArray{Equilibrium}; case=0, plotrvec = range(0.000001,equilibria[1].rb,200), titlefontsize=6, guidefontsize=6, tickfontsize=3, kwargs...)
+function plot_equil(equilibria::AbstractArray{Equilibrium}; case=0, Jt_ref=nothing, plotrvec = range(0.000001,equilibria[1].rb,200), titlefontsize=6, guidefontsize=6, tickfontsize=3, kwargs...)
     plots=[]
 
-    if length(equilibria)==1 || case==1
-        a1,a2,a3,a4=plot_equil(equilibria[1];plotrvec=plotrvec)
+    if Jt_ref isa Nothing
+        ylims = nothing
+    else
+        ylims = (0.0,Jt_ref)
+    end
 
-        pdog=display(plot(a1,a2,a3,a4,
-                            layout = (1, 4)))
+    if length(equilibria)==1 || case==1
+        return plot_equil(equilibria[1];plotrvec=plotrvec, Jt_ref=Jt_ref)
     elseif length(equilibria)==2 || case==2
-        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
+        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
 
         pdog=display(plot(a1,a2,a3,a4,
                             b1,b2,b3,b4,
                             layout = (2, 4)))
     elseif length(equilibria)==3 || case==3
-        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        c1,c2,c3,c4=plot_equil_short(equilibria[3];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
+        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        c1,c2,c3,c4=plot_equil_short(equilibria[3];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
 
         pdog=display(plot(a1,a2,a3,a4,
                             b1,b2,b3,b4,
                             c1,c2,c3,c4,
                             layout = (3, 4)))
     elseif length(equilibria)==4 || case==4
-        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        c1,c2,c3,c4=plot_equil_short(equilibria[3];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        d1,d2,d3,d4=plot_equil_short(equilibria[4];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
+        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        c1,c2,c3,c4=plot_equil_short(equilibria[3];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        d1,d2,d3,d4=plot_equil_short(equilibria[4];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
 
         pdog=display(plot(a1,a2,a3,a4,
                             b1,b2,b3,b4,
@@ -658,11 +689,11 @@ function plot_equil(equilibria::AbstractArray{Equilibrium}; case=0, plotrvec = r
                             d1,d2,d3,d4,
                             layout = (4, 4)))
     elseif length(equilibria)>=5 || case==5
-        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        c1,c2,c3,c4=plot_equil_short(equilibria[3];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        d1,d2,d3,d4=plot_equil_short(equilibria[4];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-        e1,e2,e3,e4=plot_equil_short(equilibria[5];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
+        a1,a2,a3,a4=plot_equil_short(equilibria[1];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        b1,b2,b3,b4=plot_equil_short(equilibria[2];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        c1,c2,c3,c4=plot_equil_short(equilibria[3];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        d1,d2,d3,d4=plot_equil_short(equilibria[4];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
+        e1,e2,e3,e4=plot_equil_short(equilibria[5];plotrvec=plotrvec, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize,  ylims=ylims, kwargs...)
 
         pdog=display(plot(a1,a2,a3,a4,
                             b1,b2,b3,b4,
@@ -701,15 +732,15 @@ function plot_Suydam(equilibrium)
     test_Suydam(equilibrium.Bt, equilibrium.q, equilibrium.dpdr, equilibrium.rb; plotresults=true)
 end
 
-function plot_current_profiles(equilibria::AbstractArray{Equilibrium};plotrvec = range(0.000001,equilibria[1].rb,200))
+function plot_current_profiles(equilibria::AbstractArray{Equilibrium};plotrvec = range(0.000001,equilibria[1].rb,200),rss=nothing)
     p1 = nothing
     for (io,i) in enumerate(equilibria)
         if io==1 
             p1 = plot(plotrvec,i.Jt.(plotrvec);label=false)
-            #display(vline!([rss[i]];label=false))
+            !(rss isa Nothing) && display(vline!([rss[io]];label=false))
         else
             p1 = plot!(plotrvec,i.Jt.(plotrvec);title = "Toroidal current profiles",label=false, xlabel="r (m)", ylabel="Jt current density (A/m^2)")
-            #display(vline!([rss[i]];label=false))
+            !(rss isa Nothing) && display(vline!([rss[io]];label=false))
         end
     end
     display(p1)
@@ -717,8 +748,27 @@ function plot_current_profiles(equilibria::AbstractArray{Equilibrium};plotrvec =
     return p1
 end
 
-function plot_current_profiles(equilibria::AbstractArray{ResistiveEquilibrium};plotrvec = range(0.000001,equilibria[1].equilibrium.rb,200))
-    return plot_current_profiles([i.equilibrium for i in equilibria];plotrvec = plotrvec)
+function plot_current_profiles(i::ResistiveEquilibrium;plotrvec = range(0.000001,i.equilibrium.rb,200),m_ind=nothing)
+    p1 = nothing
+
+    p1 = plot(plotrvec,i.equilibrium.Jt.(plotrvec);label=false)
+    !(m_ind isa Nothing) && (p1=vline!([i.Δprimes[m_ind].rs];label=false))
+    display(p1)
+
+    return p1
+end
+
+function plot_current_profiles(equilibria::AbstractArray{ResistiveEquilibrium}; m_ind=nothing, n=1, plotrvec = range(0.000001,equilibria[1].equilibrium.rb,200))
+    rss=nothing
+    if !(m_ind isa Nothing)
+        if length(equilibria[1].Δprimes) > 1
+            rss = [i.Δprimes[m_ind].rs for i in equilibria]
+        else
+            rss = [i.Δprimes.rs for i in equilibria]
+        end
+    end
+
+    return plot_current_profiles([i.equilibrium for i in equilibria];plotrvec = plotrvec, rss=rss)
 end    
 
 #########################################################################################
@@ -905,4 +955,98 @@ function gen_equil_run_Δl_Δr(f_gen_equilibria::Function, batch_size, num_clean
     end
 
     return resistive_equils_store, equils_and_inds
+end
+
+
+#########################################################################################
+#Well Analysis
+#########################################################################################
+
+function rs_near_local_min(res_euil::AbstractArray,min_closeness,sep_from_edge; kwargs...)
+    sutblefunc(i) = rs_near_local_min(i,min_closeness,sep_from_edge;kwargs...)
+    inds = Int[]
+    well_equils = ResistiveEquilibrium[]
+    norm_distances_to_well = Number[]
+    well_widths = Number[]
+    well_gradients = Number[]
+    Jt_double_derivatives = Number[]
+
+    for (io,o) in enumerate(res_euil)
+        tempresult = sutblefunc(o)
+        if !(tempresult==false) 
+            norm_distance_to_well, well_width, well_gradient, Jtdd = tempresult
+            push!(inds,io)
+            push!(well_equils,o)
+            push!(norm_distances_to_well,norm_distance_to_well)
+            push!(well_widths,well_width)
+            push!(well_gradients,well_gradient)
+            push!(Jt_double_derivatives,Jtdd)
+        end
+    end
+
+    return well_equils, norm_distances_to_well, well_widths, well_gradients, Jt_double_derivatives, inds
+end
+
+function rs_near_local_min(res_euil,min_closeness,sep_from_edge;m_ind=1,return_well_info=false)
+    return rs_near_local_min(res_euil.equilibrium.Jt,res_euil.equilibrium.rb,res_euil.Δprimes[m_ind].rs,min_closeness,sep_from_edge;return_well_info=return_well_info)
+end
+
+function rs_near_local_min(Jt,rb,rs,min_closeness,sep_from_edge; return_well_info=false)
+    Jtd(r) = ForwardDiff.derivative(Jt,r)
+    Jtdd(r) = ForwardDiff.derivative(Jtd,r)
+
+    local_min = []
+    local_min_ids = Int[]
+    zero_gradients = find_zeros(r -> Jtd(r),0.0,rb)
+
+    if length(zero_gradients) == 0
+        return false
+    end
+
+    for (io,i) in enumerate(zero_gradients)
+        if Jtdd(i) > 0
+            push!(local_min,i)
+            push!(local_min_ids,io)
+        end
+    end
+
+    norm_distance_to_well = minimum(abs.(local_min.-rs))/rb
+    closest_well = local_min[argmin(abs.(local_min.-rs))]
+    closest_well_id = local_min_ids[argmin(abs.(local_min.-rs))]
+
+
+    if closest_well_id==1
+        LHS_dist = closest_well
+    else
+        LHS_dist=abs(zero_gradients[closest_well_id-1]-zero_gradients[closest_well_id])
+    end
+    if closest_well_id==length(zero_gradients)
+        RHS_dist = rb-closest_well
+    else
+        RHS_dist=abs(zero_gradients[closest_well_id+1]-zero_gradients[closest_well_id])
+    end
+
+    well_width = minimum([LHS_dist,RHS_dist])
+
+    min_edge_val = minimum([Jt(maximum([closest_well-well_width,1e-15])),Jt(minimum([closest_well+well_width,rb]))])
+
+    well_gradient = (abs(min_edge_val-Jt(closest_well))/well_width)/Jt(closest_well)
+
+    #Are you in a well?
+    if (norm_distance_to_well > well_width) ||  (Jt(rs) > minimum([Jt(maximum([rs-LHS_dist,1e-15])),Jt(minimum([rs+RHS_dist,rb]))]))
+        return false
+    end
+
+    if !return_well_info
+        if norm_distance_to_well < min_closeness && (abs(closest_well-rb) > sep_from_edge*rb)
+            return true
+        end
+        return false
+    end
+
+    if return_well_info
+        return norm_distance_to_well, well_width, well_gradient, Jtdd(closest_well)
+    end
+
+    return false
 end
