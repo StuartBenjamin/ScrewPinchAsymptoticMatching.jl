@@ -102,6 +102,11 @@ include("OuterIntegrator.jl")
         return capE,capF,capH,capM,capK,capG,Lr,Qr,capE_plus_capF
     end
 
+    function Dr(Bp, q, p, dpdr, rs, R0; n=1)
+        qprime = ForwardDiff.derivative(q,rs)
+        return -2*mu0*dpdr(rs)*rs*n^2/(Bp(rs)^2*R0^2*qprime^2)
+    end
+
 ############################################################################################################################################################
 #Comparison/Discussion
 ############################################################################################################################################################

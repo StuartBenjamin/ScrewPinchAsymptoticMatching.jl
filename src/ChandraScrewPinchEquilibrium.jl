@@ -130,12 +130,12 @@ function Furth_Equil(q0,rs0,R0,ν,xb; Bp0=1.0, plot_equil=true, print_mathematic
         print_equil_data(Jt,Bt,p; rvec=rvec, kwargs...)
     end
     if plot_equil
-        p1=plot(plotrvec,Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
-        p2=plot(plotrvec,Bt.(plotrvec),title = "Bt in Teslas",label=false,ylims=(0.0,2*Bt(rb)),xlabel="r (m)",ylabel="T")
+        p1=plot(plotrvec,Bp.(plotrvec),title = "Bp",xlabel="r (m)",ylabel="T",label=false)
+        p2=plot(plotrvec,Bt.(plotrvec),title = "Bt",label=false,ylims=(0.0,2*Bt(rb)),xlabel="r (m)",ylabel="T")
         p3=plot(plotrvec,q.(plotrvec),title = "q",label=false,xlabel="r (m)")
         p4=plot(plotrvec,local_beta(p,Bt,Bp).(plotrvec),title = "Local Plasma β",xlabel="r (m)",label=false)
-        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
-        p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
+        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false)
+        p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false)
 
         outerp6 = plot(p1,p2,p3,p4,p5,p6)
         display(outerp6)
@@ -167,12 +167,12 @@ function Chandra_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0 = 1.0, plot_equil=true, prin
         print_equil_data(Jt,Bt,p; rvec=rvec, kwargs...)
     end
     if plot_equil
-        p1=plot(plotrvec,Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
-        p2=plot([plotrvec,plotrvec],[BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0).(plotrvec),Bt.(plotrvec)],title = "Bt in Teslas",label=["approx"  "exact"],ylims=(0.0,2*BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(rb)),xlabel="r (m)",ylabel="T")
+        p1=plot(plotrvec,Bp.(plotrvec),title = "Bp",xlabel="r (m)",ylabel="T",label=false)
+        p2=plot([plotrvec,plotrvec],[BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0).(plotrvec),Bt.(plotrvec)],title = "Bt",label=["approx"  "exact"],ylims=(0.0,2*BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(rb)),xlabel="r (m)",ylabel="T")
         p3=plot([plotrvec,plotrvec],[q_Furth(q0,ν,rs0).(plotrvec),q.(plotrvec)],title = "q",label=["approx"  "exact"],xlabel="r (m)")
         p4=plot(plotrvec,local_beta(p,Bt,Bp).(plotrvec),title = "Local Plasma β",xlabel="r (m)",label=false)
-        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
-        p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
+        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false)
+        p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false)
 
         outerp6 = plot(p1,p2,p3,p4,p5,p6)
         display(outerp6)
@@ -200,12 +200,12 @@ function Scaffidi_Equil(β,rs0,R0,ν,xb; Bp0=0.0, q0=1.0, plot_equil=true, print
         print_equil_data(Jt,Bt,p; rvec=rvec, kwargs...)
     end
     if plot_equil
-        p1=plot(plotrvec,Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
-        p2=plot([plotrvec,plotrvec],[BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0).(plotrvec),Bt.(plotrvec)],title = "Bt in Teslas",label=["approx"  "exact"],ylims=(0.0,2*BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(rb)),xlabel="r (m)",ylabel="T")
+        p1=plot(plotrvec,Bp.(plotrvec),title = "Bp",xlabel="r (m)",ylabel="T",label=false)
+        p2=plot([plotrvec,plotrvec],[BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0).(plotrvec),Bt.(plotrvec)],title = "Bt",label=["approx"  "exact"],ylims=(0.0,2*BtTemp(rs0,R0,ν;Bp0=Bp0,q0=q0)(rb)),xlabel="r (m)",ylabel="T")
         p3=plot([plotrvec,plotrvec],[q_Furth(q0,ν,rs0).(plotrvec),q.(plotrvec)],title = "q",label=["approx"  "exact"],xlabel="r (m)")
         p4=plot(plotrvec,local_beta(p,Bt,Bp).(plotrvec),title = "Local Plasma β",xlabel="r (m)",label=false)
-        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
-        p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="Amps (?)",label=false)
+        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false)
+        p6=plot(plotrvec,Jp.(plotrvec),title = "Poloidal current",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false)
 
         outerp6 = plot(p1,p2,p3,p4,p5,p6)
         display(outerp6)

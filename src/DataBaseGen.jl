@@ -425,8 +425,8 @@ function plot_profiles(Jt_vec, rb; p_vec=nothing, plotrvec = range(0.000001,rb,2
           
     for i in 1:length(Jt_vec)
         Jt=Jt_vec[i]
-        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false,ylims=ylims)
-        p5=scatter!(Jt.xs,Jt.(Jt.xs),title = "Toroidal current",xlabel="r (m)",ylabel="Amps/m^2",label=false,ylims=ylims)
+        p5=plot(plotrvec,Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false,ylims=ylims)
+        p5=scatter!(Jt.xs,Jt.(Jt.xs),title = "Toroidal current",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false,ylims=ylims)
         push!(plotvec,p5)
     end
 
@@ -465,7 +465,7 @@ struct Equilibrium
     Bp::Function
     Bt::Function
     q::Function
-    dpdr::Function
+    dpdr::Function #Scaled by mu0
     p::Union{Function,CubicSpline}
     Jt::Union{Function,CubicSpline}
     Jp::Union{Function}
@@ -476,7 +476,11 @@ struct Equilibrium
 end
 
 function Base.show(io::IO, equilibrium::Equilibrium) 
-    print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(equilibrium.Jt);sigdigits=3),".")
+    if equilibrium.Jt isa CubicSpline
+        print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(equilibrium.Jt);sigdigits=3),".")
+    else
+        print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(equilibrium.Jt,equilibrium.rb);sigdigits=3),".")
+    end
 end
 
 struct ΔprimeScrew
@@ -517,6 +521,75 @@ function Base.show(io::IO, req::ResistiveEquilibrium)
         print(io, "Resistive equilibrium, Jtot = ",round(total_plasma_current(req.equilibrium.Jt);sigdigits=3),".")
     end
 end
+
+function Dr(requilibrium::ResistiveEquilibrium)
+    if requilibrium.Δprimes isa ΔprimeScrew
+        qprime = ForwardDiff.derivative(requilibrium.equilibrium.q,requilibrium.Δprimes.rs)
+        return -2*(1/mu0)*requilibrium.equilibrium.dpdr(requilibrium.Δprimes.rs)*requilibrium.Δprimes.rs*requilibrium.Δprimes.n^2/(requilibrium.equilibrium.Bp(requilibrium.Δprimes.rs)^2*requilibrium.equilibrium.R0^2*qprime^2)
+    else 
+        Drs = Real[]
+        for i in requilibrium.Δprimes
+            qprime = ForwardDiff.derivative(requilibrium.equilibrium.q,i.rs)
+            push!(Drs, -2*(1/mu0)*requilibrium.equilibrium.dpdr(i.rs)*i.rs*i.n^2/(requilibrium.equilibrium.Bp(i.rs)^2*requilibrium.equilibrium.R0^2*qprime^2))
+        end
+
+        return Drs
+    end
+end
+
+function print_equil_data_(equil_series::Union{AbstractArray{ResistiveEquilibrium},AbstractArray{Equilibrium}}; directoryprefactor="", kwargs...)
+    path=pwd()
+    for i in 1:length(equil_series)
+        mkdir(directoryprefactor*"_$(i)")
+        cd(directoryprefactor*"_$(i)")
+
+        print_equil_data_(equil_series[i]; kwargs...)
+        cd(path)
+    end
+end
+
+
+function print_equil_data_(equilibrium::Union{ResistiveEquilibrium,Equilibrium}; kwargs...)
+    if equilibrium isa ResistiveEquilibrium
+        return print_equil_data_(equilibrium.equilibrium.Jt,equilibrium.equilibrium.Bt,equilibrium.equilibrium.p; kwargs...)
+    else
+        return print_equil_data_(equilibrium.Jt,equilibrium.Bt,equilibrium.p; kwargs...)
+    end
+end
+
+function print_equil_data_(Jt, Bt, p; rvec=nothing, filename_prefactor="", destination="")
+    if rvec isa Nothing
+        throw("Define vector of r-values 'rvec' to print equilibrium data on.")
+    end
+
+    Jtvec = Jt.(rvec)
+    Btvec = Bt.(rvec)
+    pvec = p.(rvec)
+
+    open(string(destination,filename_prefactor,"profile_j.txt"), "w") do io
+        #writedlm(io, [rvec Jtvec], ' ')
+        for (ioo,o) in enumerate(rvec)
+            @printf(io, "%f %f\n", o,Jtvec[ioo])
+        end
+    end
+    open(string(destination,filename_prefactor,"profile_f.txt"), "w") do io
+        #writedlm(io, [rvec Btvec], ' ')
+        for (ioo,o) in enumerate(rvec)
+            @printf(io, "%f %f\n", o,Btvec[ioo])
+        end
+    end
+    open(string(destination,filename_prefactor,"profile_p.txt"), "w") do io
+        #writedlm(io, [rvec pvec], ' ')
+        for (ioo,o) in enumerate(rvec)
+            @printf(io, "%f %f\n", o,pvec[ioo])
+        end
+    end
+
+    return Jtvec,Btvec,pvec
+end
+
+
+##
 
 function gen_equilibria_Jts(Jts,pressure_profs; Bt0=10, R0=3, dpdr_vec=nothing, dpdr=nothing, rs0=1.0, qtest=nothing)
     function dpdr0(i)
@@ -618,26 +691,26 @@ end
 #Plotting Equilibria
 #########################################################################################
 
-function plot_equil(equilibrium::Equilibrium; plotrvec = range(0.000001,equilibrium.rb,200), Jt_ref = nothing)
-    p1=plot(plotrvec,equilibrium.Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false)
-    p2=plot(plotrvec,equilibrium.Bt.(plotrvec),title = "Bt in Teslas",label=false,ylims=(0.0,2*equilibrium.Bt(equilibrium.rb)),xlabel="r (m)",ylabel="T")
-    p3=plot(plotrvec,equilibrium.q.(plotrvec),title = "q",label=false,xlabel="r (m)")
-    p4=plot(plotrvec,local_beta(equilibrium.p,equilibrium.Bt,equilibrium.Bp).(plotrvec),title = "Local Plasma β",xlabel="r (m)",label=false)
+function plot_equil(equilibrium::Equilibrium; plotrvec = range(0.000001,equilibrium.rb,200), Jt_ref = nothing, titlefontsize=12, guidefontsize=8, tickfontsize=6)
+    p1=plot(plotrvec,equilibrium.Bp.(plotrvec),title = "Bp",xlabel="r (m)",ylabel="T",label=false,titlefontsize=titlefontsize, guidefontsize=guidefontsize,tickfontsize=tickfontsize)
+    p2=plot(plotrvec,equilibrium.Bt.(plotrvec),title = "Bt",label=false,ylims=(0.0,2*equilibrium.Bt(equilibrium.rb)),xlabel="r (m)",ylabel="T",titlefontsize=titlefontsize, guidefontsize=guidefontsize,tickfontsize=tickfontsize)
+    p3=plot(plotrvec,equilibrium.q.(plotrvec),title = "q",label=false,xlabel="r (m)",titlefontsize=titlefontsize, guidefontsize=guidefontsize,tickfontsize=tickfontsize)
+    p4=plot(plotrvec,local_beta(equilibrium.p,equilibrium.Bt,equilibrium.Bp).(plotrvec),title = "Plasma β",xlabel="r (m)",label=false,titlefontsize=titlefontsize, guidefontsize=guidefontsize,tickfontsize=tickfontsize)
 
     if Jt_ref isa Nothing
-        p5=plot(plotrvec,equilibrium.Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false, ylims=nothing)
+        p5=plot(plotrvec,equilibrium.Jt.(plotrvec),title = "Jt density",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false, ylims=nothing,titlefontsize=titlefontsize, guidefontsize=guidefontsize,tickfontsize=tickfontsize)
     else
-        p5=plot(plotrvec,equilibrium.Jt.(plotrvec),title = "Toroidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false, ylims = (0.0,Jt_ref))
+        p5=plot(plotrvec,equilibrium.Jt.(plotrvec),title = "Jt density",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false, ylims = (0.0,Jt_ref),titlefontsize=titlefontsize, guidefontsize=guidefontsize,tickfontsize=tickfontsize)
     end
-    p6=plot(plotrvec,equilibrium.Jp.(plotrvec),title = "Poloidal current density",xlabel="r (m)",ylabel="Amps/m^2",label=false)
+    p6=plot(plotrvec,equilibrium.Jp.(plotrvec),title = "Jp density",xlabel="r (m)",ylabel="\$\\textrm{A/m}^{2}\$",label=false,titlefontsize=titlefontsize, guidefontsize=guidefontsize,tickfontsize=tickfontsize)
 
     outerp6 = plot(p1,p2,p3,p4,p5,p6)
     display(outerp6)
 end
 
 function plot_equil_short(equilibrium::Equilibrium; plotrvec = range(0.000001,equilibrium.rb,200),guidefontsize=3,titlefontsize=3,tickfontsize=2, ylims=nothing, kwargs...)
-    p1=plot(plotrvec,equilibrium.Bp.(plotrvec),title = "Bp in Teslas",xlabel="r (m)",ylabel="T",label=false, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
-    p2=plot(plotrvec,equilibrium.Bt.(plotrvec),title = "Bt in Teslas",label=false,ylims=(0.0,2*equilibrium.Bt(equilibrium.rb)),xlabel="r (m)",ylabel="T", titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
+    p1=plot(plotrvec,equilibrium.Bp.(plotrvec),title = "Bp",xlabel="r (m)",ylabel="T",label=false, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
+    p2=plot(plotrvec,equilibrium.Bt.(plotrvec),title = "Bt",label=false,ylims=(0.0,2*equilibrium.Bt(equilibrium.rb)),xlabel="r (m)",ylabel="T", titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
     p3=plot(plotrvec,equilibrium.q.(plotrvec),title = "q",label=false,xlabel="r (m)", titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
     p4=plot(plotrvec,local_beta(equilibrium.p,equilibrium.Bt,equilibrium.Bp).(plotrvec),title = "Local Plasma β",xlabel="r (m)",label=false, titlefontsize=titlefontsize, guidefontsize=guidefontsize, tickfontsize=tickfontsize, kwargs...)
 
@@ -739,7 +812,7 @@ function plot_current_profiles(equilibria::AbstractArray{Equilibrium};plotrvec =
             p1 = plot(plotrvec,i.Jt.(plotrvec);label=false)
             !(rss isa Nothing) && display(vline!([rss[io]];label=false))
         else
-            p1 = plot!(plotrvec,i.Jt.(plotrvec);title = "Toroidal current profiles",label=false, xlabel="r (m)", ylabel="Jt current density (A/m^2)")
+            p1 = plot!(plotrvec,i.Jt.(plotrvec);title = "Toroidal current profiles",label=false, xlabel="r (m)", ylabel="Jt density (\$\\textrm{A/m}^{2}\$)")
             !(rss isa Nothing) && display(vline!([rss[io]];label=false))
         end
     end
@@ -769,7 +842,32 @@ function plot_current_profiles(equilibria::AbstractArray{ResistiveEquilibrium}; 
     end
 
     return plot_current_profiles([i.equilibrium for i in equilibria];plotrvec = plotrvec, rss=rss)
-end    
+end  
+
+function plot_q_profiles(equilibria::AbstractArray{ResistiveEquilibrium}; m_ind=nothing, n=1, plotrvec = range(0.000001,equilibria[1].equilibrium.rb,200))
+    rss=nothing
+    if !(m_ind isa Nothing)
+        if length(equilibria[1].Δprimes) > 1
+            rss = [i.Δprimes[m_ind].rs for i in equilibria]
+        else
+            rss = [i.Δprimes.rs for i in equilibria]
+        end
+    end
+
+    p1 = nothing
+    for (io,i) in enumerate(equilibria)
+        if io==1 
+            p1 = plot(plotrvec,i.equilibrium.q.(plotrvec);label=false)
+            !(rss isa Nothing) && display(vline!([rss[io]];label=false))
+        else
+            p1 = plot!(plotrvec,i.equilibrium.q.(plotrvec);title = "q profiles",label=false, xlabel="r (m)")
+            !(rss isa Nothing) && display(vline!([rss[io]];label=false))
+        end
+    end
+    display(p1)
+
+    return p1
+end   
 
 #########################################################################################
 #Generate equilibrium cleaners
@@ -962,41 +1060,49 @@ end
 #Well Analysis
 #########################################################################################
 
-function rs_near_local_min(res_euil::AbstractArray,min_closeness,sep_from_edge; kwargs...)
-    sutblefunc(i) = rs_near_local_min(i,min_closeness,sep_from_edge;kwargs...)
+function rs_near_local_minmax(res_euil::AbstractArray,min_closeness,sep_from_edge; kwargs...)
+    sutblefunc(i) = rs_near_local_minmax(i,min_closeness,sep_from_edge; kwargs...)
     inds = Int[]
     well_equils = ResistiveEquilibrium[]
     norm_distances_to_well = Number[]
     well_widths = Number[]
     well_gradients = Number[]
     Jt_double_derivatives = Number[]
+    wellhill_closenesses = Number[]
+
 
     for (io,o) in enumerate(res_euil)
         tempresult = sutblefunc(o)
         if !(tempresult==false) 
-            norm_distance_to_well, well_width, well_gradient, Jtdd = tempresult
+            norm_distance_to_wellhill, wellhill_width, well_gradient, Jtdd, wellhill_closeness = tempresult
             push!(inds,io)
             push!(well_equils,o)
-            push!(norm_distances_to_well,norm_distance_to_well)
-            push!(well_widths,well_width)
+            push!(norm_distances_to_well,norm_distance_to_wellhill)
+            push!(well_widths,wellhill_width)
             push!(well_gradients,well_gradient)
             push!(Jt_double_derivatives,Jtdd)
+            push!(wellhill_closenesses,wellhill_closeness)
         end
     end
 
-    return well_equils, norm_distances_to_well, well_widths, well_gradients, Jt_double_derivatives, inds
+    if length(inds) == 0
+        @warn "No wells/hills found"
+        return nothing,nothing,nothing,nothing,nothing,nothing,nothing 
+    end
+
+    return well_equils, norm_distances_to_well, well_widths, well_gradients, Jt_double_derivatives, wellhill_closenesses, inds
 end
 
-function rs_near_local_min(res_euil,min_closeness,sep_from_edge;m_ind=1,return_well_info=false)
-    return rs_near_local_min(res_euil.equilibrium.Jt,res_euil.equilibrium.rb,res_euil.Δprimes[m_ind].rs,min_closeness,sep_from_edge;return_well_info=return_well_info)
+function rs_near_local_minmax(res_euil,min_closeness,sep_from_edge; well=true, m_ind=1,return_wellhill_info=false)
+    return rs_near_local_minmax(res_euil.equilibrium.Jt,res_euil.equilibrium.rb,res_euil.Δprimes[m_ind].rs,min_closeness,sep_from_edge; well=well, return_wellhill_info=return_wellhill_info)
 end
 
-function rs_near_local_min(Jt,rb,rs,min_closeness,sep_from_edge; return_well_info=false)
+function rs_near_local_minmax(Jt,rb,rs,min_closeness,sep_from_edge; well=true, return_wellhill_info=false)
     Jtd(r) = ForwardDiff.derivative(Jt,r)
     Jtdd(r) = ForwardDiff.derivative(Jtd,r)
 
-    local_min = []
-    local_min_ids = Int[]
+    local_minmax = []
+    local_minmax_ids = Int[]
     zero_gradients = find_zeros(r -> Jtd(r),0.0,rb)
 
     if length(zero_gradients) == 0
@@ -1004,48 +1110,76 @@ function rs_near_local_min(Jt,rb,rs,min_closeness,sep_from_edge; return_well_inf
     end
 
     for (io,i) in enumerate(zero_gradients)
-        if Jtdd(i) > 0
-            push!(local_min,i)
-            push!(local_min_ids,io)
+        if well
+            if Jtdd(i) > 0
+                push!(local_minmax,i)
+                push!(local_minmax_ids,io)
+            end
+        else
+            if Jtdd(i) < 0
+                push!(local_minmax,i)
+                push!(local_minmax_ids,io)
+            end
         end
     end
 
-    norm_distance_to_well = minimum(abs.(local_min.-rs))/rb
-    closest_well = local_min[argmin(abs.(local_min.-rs))]
-    closest_well_id = local_min_ids[argmin(abs.(local_min.-rs))]
-
-
-    if closest_well_id==1
-        LHS_dist = closest_well
-    else
-        LHS_dist=abs(zero_gradients[closest_well_id-1]-zero_gradients[closest_well_id])
-    end
-    if closest_well_id==length(zero_gradients)
-        RHS_dist = rb-closest_well
-    else
-        RHS_dist=abs(zero_gradients[closest_well_id+1]-zero_gradients[closest_well_id])
-    end
-
-    well_width = minimum([LHS_dist,RHS_dist])
-
-    min_edge_val = minimum([Jt(maximum([closest_well-well_width,1e-15])),Jt(minimum([closest_well+well_width,rb]))])
-
-    well_gradient = (abs(min_edge_val-Jt(closest_well))/well_width)/Jt(closest_well)
-
-    #Are you in a well?
-    if (norm_distance_to_well > well_width) ||  (Jt(rs) > minimum([Jt(maximum([rs-LHS_dist,1e-15])),Jt(minimum([rs+RHS_dist,rb]))]))
+    if length(local_minmax) == 0
         return false
     end
 
-    if !return_well_info
-        if norm_distance_to_well < min_closeness && (abs(closest_well-rb) > sep_from_edge*rb)
+    norm_distance_to_wellhill = minimum(abs.(local_minmax.-rs))/rb
+    closest_wellhill = local_minmax[argmin(abs.(local_minmax.-rs))]
+    closest_wellhill_id = local_minmax_ids[argmin(abs.(local_minmax.-rs))]
+
+    if closest_wellhill_id==1
+        LHS_dist = closest_wellhill
+    else
+        LHS_dist=abs(zero_gradients[closest_wellhill_id-1]-zero_gradients[closest_wellhill_id])
+    end
+    if closest_wellhill_id==length(zero_gradients)
+        RHS_dist = rb-closest_wellhill
+    else
+        RHS_dist=abs(zero_gradients[closest_wellhill_id+1]-zero_gradients[closest_wellhill_id])
+    end
+
+    wellhill_width = minimum([LHS_dist,RHS_dist])
+    wellhill_closeness = minimum(abs.(local_minmax.-rs))/wellhill_width
+
+    if well
+        min_edge_val = minimum([Jt(maximum([closest_wellhill-wellhill_width,1e-15])),Jt(minimum([closest_wellhill+wellhill_width,rb]))])
+    else
+        max_edge_val = maximum([Jt(maximum([closest_wellhill-wellhill_width,1e-15])),Jt(minimum([closest_wellhill+wellhill_width,rb]))])
+    end
+
+    if well
+        wellhill_gradient = (abs(min_edge_val-Jt(closest_wellhill))/wellhill_width)/Jt(closest_wellhill)
+    else
+        wellhill_gradient = (abs(max_edge_val-Jt(closest_wellhill))/wellhill_width)/Jt(closest_wellhill)
+    end
+
+    #Are you in a well/on a hill?
+    #Outside bounds
+    (norm_distance_to_wellhill > wellhill_width) && (return false)
+    #Too far up side/down side
+    if well 
+        if (Jt(rs) > minimum([Jt(maximum([rs-LHS_dist,1e-15])),Jt(minimum([rs+RHS_dist,rb]))]))
+            return false
+        end
+    else
+        if (Jt(rs) < maximum([Jt(maximum([rs-LHS_dist,1e-15])),Jt(minimum([rs+RHS_dist,rb]))]))
+            return false
+        end
+    end
+
+    if !return_wellhill_info
+        if norm_distance_to_wellhill < min_closeness && (abs(closest_wellhill-rb) > sep_from_edge*rb)
             return true
         end
         return false
     end
 
-    if return_well_info
-        return norm_distance_to_well, well_width, well_gradient, Jtdd(closest_well)
+    if return_wellhill_info
+        return norm_distance_to_wellhill, wellhill_width, wellhill_gradient, Jtdd(closest_wellhill), wellhill_closeness
     end
 
     return false
